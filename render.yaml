@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: paywatch
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: APP_URL
+        sync: false
