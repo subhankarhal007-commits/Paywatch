@@ -1,0 +1,267 @@
+{
+  "users": [
+    {
+      "id": "usr_54704191-1c9",
+      "telegram_id": "5933272882",
+      "username": "Subho209",
+      "first_name": "Subhankar",
+      "profile_photo": "https://t.me/i/userpic/320/QH0SfuhuGrW9QLbTT_PkyInpUr_0nrZ1FMQ1NRiK4OkKHsrujsYVguK7LTP4alhP.svg",
+      "balance": 0.81,
+      "total_earned": 0.81,
+      "total_withdrawn": 0,
+      "ads_watched": 9,
+      "daily_ads": 0,
+      "daily_ads_date": "2026-10-02",
+      "referrals": 0,
+      "referral_earnings": 0,
+      "tasks_completed": 0,
+      "created_at": "2026-09-27T15:07:40.343Z",
+      "updated_at": "2026-10-02T15:31:15.753Z",
+      "status": "active",
+      "last_ad_watched_at": "2026-09-29T08:55:15.131Z"
+    }
+  ],
+  "ads": [
+    {
+      "id": "ad_1",
+      "title": "ApexPay Crypto Wallet",
+      "reward": 0.03,
+      "daily_limit": 15,
+      "cooldown": 30,
+      "status": "active",
+      "provider": "paywatch_direct",
+      "video_duration": 15,
+      "sponsor_name": "ApexPay Web3",
+      "sponsor_tagline": "Next-generation multi-chain wallet with 0% swap fees & instant cashbacks",
+      "sponsor_url": "https://apexpay.network",
+      "created_at": "2026-09-25T19:18:31.990Z"
+    },
+    {
+      "id": "ad_2",
+      "title": "CyberQuest: Arena of Legends",
+      "reward": 0.03,
+      "daily_limit": 15,
+      "cooldown": 30,
+      "status": "active",
+      "provider": "network_video",
+      "video_duration": 15,
+      "sponsor_name": "CyberQuest Studios",
+      "sponsor_tagline": "Play the #1 tactical mobile RPG with over 5M active commanders",
+      "sponsor_url": "https://cyberquest.game",
+      "created_at": "2026-09-26T07:18:31.991Z"
+    }
+  ],
+  "ad_completions": [
+    {
+      "id": "monetag_f2f4b4bd-4",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "monetag_zone_11906638",
+      "reward": 0.03,
+      "provider_transaction_id": "mt_1790521698901_cabe89",
+      "status": "completed",
+      "completed_at": "2026-09-27T15:08:18.901Z"
+    },
+    {
+      "id": "monetag_aedd79f8-f",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "monetag_zone_11906638",
+      "reward": 0.03,
+      "provider_transaction_id": "mt_1790523299553_fa1e7c",
+      "status": "completed",
+      "completed_at": "2026-09-27T15:34:59.553Z"
+    },
+    {
+      "id": "adc_7ed190c5-4",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "ad_1",
+      "reward": 0.3,
+      "provider_transaction_id": "prov_tx_bccff93e-cea3-4e",
+      "status": "completed",
+      "completed_at": "2026-09-28T05:36:24.643Z"
+    },
+    {
+      "id": "adc_e0df4b8a-d",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "ad_1",
+      "reward": 0.3,
+      "provider_transaction_id": "prov_tx_79d6c1ad-1303-49",
+      "status": "completed",
+      "completed_at": "2026-09-28T05:37:23.534Z"
+    },
+    {
+      "id": "adc_3bf78b33-3",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "ad_1",
+      "reward": 0.03,
+      "provider_transaction_id": "prov_tx_629c43e6-b16f-4e",
+      "status": "completed",
+      "completed_at": "2026-09-29T04:30:28.200Z"
+    },
+    {
+      "id": "adc_858ec406-4",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "ad_1",
+      "reward": 0.03,
+      "provider_transaction_id": "prov_tx_1e051345-de3e-42",
+      "status": "completed",
+      "completed_at": "2026-09-29T04:31:53.318Z"
+    },
+    {
+      "id": "adc_0acde3ba-e",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "ad_1",
+      "reward": 0.03,
+      "provider_transaction_id": "prov_tx_1762d5cd-4ca3-46",
+      "status": "completed",
+      "completed_at": "2026-09-29T04:33:03.135Z"
+    },
+    {
+      "id": "adc_47b3a67d-9",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "ad_1",
+      "reward": 0.03,
+      "provider_transaction_id": "prov_tx_be575eea-dac6-49",
+      "status": "completed",
+      "completed_at": "2026-09-29T04:34:59.106Z"
+    },
+    {
+      "id": "adc_b0f1d2f7-c",
+      "user_id": "usr_54704191-1c9",
+      "ad_id": "ad_1",
+      "ad_title": "ApexPay Crypto Wallet",
+      "reward": 0.03,
+      "provider_transaction_id": "prov_tx_5ada8cd3-5563-4b",
+      "status": "completed",
+      "completed_at": "2026-09-29T08:55:15.131Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_910b71ff",
+      "title": "Visit website",
+      "description": "Visit website and stay for the timer duration to earn cash.",
+      "reward": 0.02,
+      "task_type": "website_visit",
+      "verification_method": "instant_timer",
+      "action_url": "https://onlineearningob.blogspot.com/2026/09/blog-post.html",
+      "status": "active",
+      "duration_seconds": 15,
+      "created_at": "2026-09-27T15:33:07.401Z"
+    }
+  ],
+  "task_completions": [
+    {
+      "id": "tc_2b1475fc-f",
+      "user_id": "usr_54704191-1c9",
+      "task_id": "task_910b71ff",
+      "reward": 0.02,
+      "status": "pending",
+      "completed_at": "2026-09-27T15:36:01.524Z"
+    }
+  ],
+  "referrals": [],
+  "withdrawals": [],
+  "transactions": [
+    {
+      "id": "tx_b1ea61f4-9a6",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.03,
+      "description": "Monetag Rewarded Interstitial (Zone 11906638)",
+      "reference_id": "monetag_f2f4b4bd-4",
+      "created_at": "2026-09-27T15:08:18.901Z"
+    },
+    {
+      "id": "tx_223b93ca-83f",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.03,
+      "description": "Monetag Rewarded Interstitial (Zone 11906638)",
+      "reference_id": "monetag_aedd79f8-f",
+      "created_at": "2026-09-27T15:34:59.553Z"
+    },
+    {
+      "id": "tx_4165707d-555",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.3,
+      "description": "Ad Reward: ApexPay Crypto Wallet",
+      "reference_id": "adc_7ed190c5-4",
+      "created_at": "2026-09-28T05:36:24.643Z"
+    },
+    {
+      "id": "tx_bc56b092-095",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.3,
+      "description": "Ad Reward: ApexPay Crypto Wallet",
+      "reference_id": "adc_e0df4b8a-d",
+      "created_at": "2026-09-28T05:37:23.534Z"
+    },
+    {
+      "id": "tx_8172d270-08b",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.03,
+      "description": "Ad Reward: ApexPay Crypto Wallet",
+      "reference_id": "adc_3bf78b33-3",
+      "created_at": "2026-09-29T04:30:28.200Z"
+    },
+    {
+      "id": "tx_4b8bf31a-b2e",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.03,
+      "description": "Ad Reward: ApexPay Crypto Wallet",
+      "reference_id": "adc_858ec406-4",
+      "created_at": "2026-09-29T04:31:53.318Z"
+    },
+    {
+      "id": "tx_9eb81511-ae9",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.03,
+      "description": "Ad Reward: ApexPay Crypto Wallet",
+      "reference_id": "adc_0acde3ba-e",
+      "created_at": "2026-09-29T04:33:03.135Z"
+    },
+    {
+      "id": "tx_0a5a6ca0-68b",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.03,
+      "description": "Ad Reward: ApexPay Crypto Wallet",
+      "reference_id": "adc_47b3a67d-9",
+      "created_at": "2026-09-29T04:34:59.106Z"
+    },
+    {
+      "id": "tx_037005fd-da3",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.03,
+      "description": "Ad Reward: ApexPay Crypto Wallet",
+      "reference_id": "adc_b0f1d2f7-c",
+      "created_at": "2026-09-29T08:55:15.131Z"
+    }
+  ],
+  "settings": {
+    "min_withdrawal": 10,
+    "referral_reward": 0.2,
+    "daily_ad_limit": 15,
+    "ad_reward": 0.03,
+    "cooldown_seconds": 0,
+    "supported_methods": [
+      "USDT (TRC20)",
+      "TON Network",
+      "TRX",
+      "PayPal"
+    ],
+    "bot_username": "paywatch2_bot",
+    "announcement": "🌟 Welcome to Pay Watch! Watch verified sponsor ads and complete quick tasks to earn real rewards.",
+    "support_username": "paywatch2_bot",
+    "admin_pin": "2097",
+    "owner_telegram_ids": [
+      "5933272882"
+    ]
+  }
+}

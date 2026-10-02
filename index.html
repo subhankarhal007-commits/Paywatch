@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Pay Watch - Earning</title>
+    <meta name="description" content="Professional, modern, and secure Telegram Mini App for earning rewards by watching ads and completing tasks." />
+    <meta property="og:title" content="Pay Watch - Earning" />
+    <meta property="og:description" content="Professional, modern, and secure Telegram Mini App for earning rewards by watching ads and completing tasks." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#ffffff" />
+    
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Telegram WebApp CloudStorage Polyfill & Compatibility Layer -->
+    <script>
+      (function() {
+        try {
+          // Suppress CloudStorage unsupported log from older Telegram webview versions
+          var origError = console.error;
+          console.error = function() {
+            if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('CloudStorage is not supported in version') !== -1) {
+              return;
+            }
+            return origError.apply(console, arguments);
+          };
+
+          if (window.Telegram && window.Telegram.WebApp) {
+            var tg = window.Telegram.WebApp;
+            var storagePrefix = 'tg_cloud_';
+
+            var polyStorage = {
+              setItem: function(key, value, callback) {
+                try {
+                  window.localStorage.setItem(storagePrefix + key, String(value));
+                  if (typeof callback === 'function') setTimeout(function() { callback(null, true); }, 0);
+                } catch (err) {
+                  if (typeof callback === 'function') setTimeout(function() { callback(err, false); }, 0);
+                }
+                return tg.CloudStorage || polyStorage;
+              },
+              getItem: function(key, callback) {
+                try {
+                  var val = window.localStorage.getItem(storagePrefix + key);
+                  if (typeof callback === 'function') setTimeout(function() { callback(null, val); }, 0);
+                } catch (err) {
+                  if (typeof callback === 'function') setTimeout(function() { callback(err, null); }, 0);
+                }
+                return tg.CloudStorage || polyStorage;
+              },
+              getItems: function(keys, callback) {
+                try {
+                  var res = {};
+                  if (Array.isArray(keys)) {
+                    keys.forEach(function(k) {
+                      res[k] = window.localStorage.getItem(storagePrefix + k);
+                    });
+                  }
+                  if (typeof callback === 'function') setTimeout(function() { callback(null, res); }, 0);
+                } catch (err) {
+                  if (typeof callback === 'function') setTimeout(function() { callback(err, {}); }, 0);
+                }
+                return tg.CloudStorage || polyStorage;
+              },
+              removeItem: function(key, callback) {
+                try {
+                  window.localStorage.removeItem(storagePrefix + key);
+                  if (typeof callback === 'function') setTimeout(function() { callback(null, true); }, 0);
+                } catch (err) {
+                  if (typeof callback === 'function') setTimeout(function() { callback(err, false); }, 0);
+                }
+                return tg.CloudStorage || polyStorage;
+              },
+              removeItems: function(keys, callback) {
+                try {
+                  if (Array.isArray(keys)) {
+                    keys.forEach(function(k) {
+                      window.localStorage.removeItem(storagePrefix + k);
+                    });
+                  }
+                  if (typeof callback === 'function') setTimeout(function() { callback(null, true); }, 0);
+                } catch (err) {
+                  if (typeof callback === 'function') setTimeout(function() { callback(err, false); }, 0);
+                }
+                return tg.CloudStorage || polyStorage;
+              },
+              getKeys: function(callback) {
+                try {
+                  var keys = [];
+                  for (var i = 0; i < window.localStorage.length; i++) {
+                    var k = window.localStorage.key(i);
+                    if (k && k.indexOf(storagePrefix) === 0) {
+                      keys.push(k.substring(storagePrefix.length));
+                    }
+                  }
+                  if (typeof callback === 'function') setTimeout(function() { callback(null, keys); }, 0);
+                } catch (err) {
+                  if (typeof callback === 'function') setTimeout(function() { callback(err, []); }, 0);
+                }
+                return tg.CloudStorage || polyStorage;
+              }
+            };
+
+            // Override CloudStorage methods directly if it already exists
+            if (tg.CloudStorage) {
+              for (var m in polyStorage) {
+                tg.CloudStorage[m] = polyStorage[m];
+              }
+            } else {
+              try {
+                Object.defineProperty(tg, 'CloudStorage', {
+                  value: polyStorage,
+                  writable: true,
+                  configurable: true,
+                  enumerable: true
+                });
+              } catch (e) {
+                tg.CloudStorage = polyStorage;
+              }
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
+
+    <!-- Global Guard for 3rd Party Ad Networks (Monetag / AdEx) -->
+    <script>
+      (function() {
+        window.addEventListener('unhandledrejection', function(event) {
+          try {
+            var reason = event.reason;
+            var text = typeof reason === 'string' ? reason : (reason && reason.message ? reason.message : String(reason || ''));
+            if (/adex timeout/i.test(text) || /ad timeout/i.test(text) || /libtl/i.test(text)) {
+              console.warn('🛡️ Intercepted and handled AdEx timeout gracefully:', text);
+              if (typeof event.preventDefault === 'function') event.preventDefault();
+              if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+              return true;
+            }
+          } catch (e) {}
+        });
+
+        window.addEventListener('error', function(event) {
+          try {
+            var msg = event.message || '';
+            var src = event.filename || '';
+            if (/adex timeout/i.test(msg) || /libtl\.com/i.test(src)) {
+              console.warn('🛡️ Handled AdEx script error:', msg);
+              if (typeof event.preventDefault === 'function') event.preventDefault();
+              return true;
+            }
+          } catch (e) {}
+        });
+      })();
+    </script>
+
+    <!-- Monetag Telegram Bot Ads SDK (Zone 11906638) -->
+    <script src="https://libtl.com/sdk.js" data-zone="11906638" data-sdk="show_11906638"></script>
+
+    <!-- Google Fonts: Plus Jakarta Sans & Outfit for luxury gold/navy display -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-slate-100 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

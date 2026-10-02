@@ -1,0 +1,6 @@
+{
+  "name": "Pay Watch - Earning",
+  "description": "Professional, modern, and secure Telegram Mini App for earning rewards by watching ads and completing tasks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
