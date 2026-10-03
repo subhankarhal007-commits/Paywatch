@@ -135,7 +135,7 @@ apiRouter.post('/bot/webhook', async (req: Request, res: Response) => {
     if (update?.message?.text) {
       const chatId = update.message.chat.id;
       const text = update.message.text;
-      const appUrl = process.env.APP_URL || 'https://t.me/paywatch2_bot';
+      const appUrl = 'https://www.criptomining.store';
 
       if (text.startsWith('/start')) {
         await sendBotWelcomeMessage(chatId, appUrl);

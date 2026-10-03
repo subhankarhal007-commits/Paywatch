@@ -4,8 +4,20 @@ import { getPublicUrl } from './tunnel.ts';
 export const TELEGRAM_BOT_TOKEN =
   process.env.TELEGRAM_BOT_TOKEN || '8774039051:AAGSE6-1Oe1EQlhO9SqKNGvBJhTH_CcqNII';
 export const TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'paywatch2_bot';
-export const OFFICIAL_PREVIEW_URL =
-  process.env.APP_URL || 'https://www.criptomining.store';
+export const PRODUCTION_DOMAIN = 'https://www.criptomining.store';
+
+export function getCleanAppUrl(preferredUrl?: string): string {
+  if (preferredUrl && !preferredUrl.includes('.run.app') && !preferredUrl.includes('localhost')) {
+    return preferredUrl;
+  }
+  const envUrl = process.env.APP_URL;
+  if (envUrl && !envUrl.includes('.run.app') && !envUrl.includes('localhost')) {
+    return envUrl;
+  }
+  return PRODUCTION_DOMAIN;
+}
+
+export const OFFICIAL_PREVIEW_URL = getCleanAppUrl();
 
 /**
  * Validates Telegram WebApp initData string using HMAC-SHA256 per official Telegram documentation:
@@ -73,8 +85,7 @@ export function validateTelegramInitData(
  * Configure Telegram Bot Menu Button to open Pay Watch WebApp directly in chat
  */
 export async function configureBotMenuButton(appUrl?: string, token = TELEGRAM_BOT_TOKEN, chatId?: number | string) {
-  const tunnelUrl = getPublicUrl();
-  let activeUrl = tunnelUrl || appUrl || OFFICIAL_PREVIEW_URL;
+  let activeUrl = getCleanAppUrl(appUrl);
   if (!token || !activeUrl) return { success: false, error: 'Token or appUrl missing' };
 
   try {
@@ -133,7 +144,7 @@ export async function sendBotWelcomeMessage(
 ) {
   if (!token) return { success: false, error: 'Bot token missing' };
 
-  let currentUrl = appUrl || getPublicUrl() || OFFICIAL_PREVIEW_URL;
+  let currentUrl = getCleanAppUrl(appUrl);
 
   // Also auto-refresh this specific user's chat menu button to the live URL
   configureBotMenuButton(currentUrl, token, chatId).catch(() => {});
@@ -238,7 +249,7 @@ export function startTelegramBotPolling(appUrl?: string, token = TELEGRAM_BOT_TO
                   if (liveUrl) break;
                 }
               }
-              const finalUrl = liveUrl || appUrl || OFFICIAL_PREVIEW_URL;
+              const finalUrl = getCleanAppUrl(appUrl);
               await sendBotWelcomeMessage(chatId, finalUrl, firstName, token);
             }
           }

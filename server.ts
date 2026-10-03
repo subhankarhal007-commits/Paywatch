@@ -50,10 +50,7 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 Pay Watch backend server running on http://0.0.0.0:${PORT} (Production: ${isProduction})`);
 
-    const fallbackUrl =
-      process.env.APP_URL || 'https://www.criptomining.store';
-
-    let targetAppUrl = fallbackUrl;
+    const targetAppUrl = 'https://www.criptomining.store';
 
     try {
       const { configureBotMenuButton, startTelegramBotPolling } = await import('./src/server/telegramBot.ts');
