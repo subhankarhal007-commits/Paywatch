@@ -164,6 +164,39 @@ apiRouter.get('/user/me', (req: Request, res: Response) => {
   });
 });
 
+// Protect user balance against server redeploys or restarts
+apiRouter.post('/user/sync-balance', (req: Request, res: Response) => {
+  const user = getAuthUser(req);
+  if (!user) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+
+  const { verifiedBalance } = req.body;
+  const numVerified = typeof verifiedBalance === 'number' ? verifiedBalance : parseFloat(verifiedBalance);
+
+  if (isNaN(numVerified) || numVerified <= 0) {
+    return res.json({ success: false, balance: user.balance, user });
+  }
+
+  // If client verified balance is higher than current server balance (e.g. from an older database snapshot after restart)
+  // Restore it safely up to a reasonable threshold without exceeding total reasonable bounds
+  if (numVerified > user.balance && (numVerified - user.balance) <= 10.00) {
+    console.log(`[Balance Guardian] Restoring earned balance for ${user.first_name} (${user.telegram_id}): $${user.balance} -> $${numVerified}`);
+    user.balance = Number(numVerified.toFixed(2));
+    if (user.balance > user.total_earned) {
+      user.total_earned = user.balance;
+    }
+    user.updated_at = new Date().toISOString();
+    db.persist();
+  }
+
+  res.json({
+    success: true,
+    balance: user.balance,
+    user,
+  });
+});
+
 // ==========================================
 // WATCH ADS ENDPOINTS
 // ==========================================

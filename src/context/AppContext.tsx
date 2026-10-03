@@ -188,7 +188,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ref: refId,
       });
 
-      setUser(res.user);
+      let currentUser = res.user;
+      if (currentUser?.telegram_id) {
+        const key = `paywatch_vbal_${currentUser.telegram_id}`;
+        const savedBal = parseFloat(localStorage.getItem(key) || '0');
+        if (!isNaN(savedBal) && savedBal > currentUser.balance) {
+          try {
+            const syncRes = await api.syncBalance(savedBal);
+            if (syncRes.success && syncRes.user) {
+              currentUser = syncRes.user;
+            }
+          } catch (e) {
+            console.warn('Balance sync check error:', e);
+          }
+        }
+        localStorage.setItem(key, currentUser.balance.toFixed(2));
+      }
+
+      setUser(currentUser);
       setSettings(res.settings);
 
       // Fetch initial ad status
@@ -236,6 +253,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshUser = useCallback(async () => {
     try {
       const res = await api.getMe();
+      if (res.user?.telegram_id) {
+        localStorage.setItem(`paywatch_vbal_${res.user.telegram_id}`, res.user.balance.toFixed(2));
+      }
       setUser(res.user);
       if (res.settings) setSettings(res.settings);
     } catch (err: any) {
@@ -311,6 +331,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       triggerHaptic('success');
       showToast(res.message || `+$${res.reward.toFixed(2)} credited to your wallet!`, 'success');
+      if (res.user?.telegram_id) {
+        localStorage.setItem(`paywatch_vbal_${res.user.telegram_id}`, res.user.balance.toFixed(2));
+      }
       setUser(res.user);
       setIsAdPlayerOpen(false);
       setActiveAdSession(null);

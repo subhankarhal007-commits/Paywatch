@@ -6,17 +6,17 @@
       "username": "Subho209",
       "first_name": "Subhankar",
       "profile_photo": "https://t.me/i/userpic/320/QH0SfuhuGrW9QLbTT_PkyInpUr_0nrZ1FMQ1NRiK4OkKHsrujsYVguK7LTP4alhP.svg",
-      "balance": 0.81,
-      "total_earned": 0.81,
+      "balance": 0.87,
+      "total_earned": 0.87,
       "total_withdrawn": 0,
-      "ads_watched": 9,
-      "daily_ads": 0,
-      "daily_ads_date": "2026-10-02",
+      "ads_watched": 11,
+      "daily_ads": 2,
+      "daily_ads_date": "2026-10-03",
       "referrals": 0,
       "referral_earnings": 0,
       "tasks_completed": 0,
       "created_at": "2026-09-27T15:07:40.343Z",
-      "updated_at": "2026-10-02T16:12:46.706Z",
+      "updated_at": "2026-10-03T05:11:12.688Z",
       "status": "active",
       "last_ad_watched_at": "2026-09-29T08:55:15.131Z"
     }
@@ -242,6 +242,14 @@
       "description": "Ad Reward: ApexPay Crypto Wallet",
       "reference_id": "adc_b0f1d2f7-c",
       "created_at": "2026-09-29T08:55:15.131Z"
+    },
+    {
+      "id": "tx_earned_protect_murxp99t",
+      "user_id": "usr_54704191-1c9",
+      "type": "ad_reward",
+      "amount": 0.06,
+      "description": "Ad Reward: Sponsor Bonus",
+      "created_at": "2026-10-03T05:11:12.689Z"
     }
   ],
   "settings": {

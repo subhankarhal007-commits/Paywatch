@@ -95,6 +95,14 @@ class ApiService {
     return this.request<{ success: boolean; user: User; settings: SystemSettings }>('/api/user/me');
   }
 
+  // Balance Guardian - Sync verified balance if server restarted with older snapshot
+  async syncBalance(verifiedBalance: number) {
+    return this.request<{ success: boolean; balance: number; user: User }>('/api/user/sync-balance', {
+      method: 'POST',
+      body: JSON.stringify({ verifiedBalance }),
+    });
+  }
+
   // Ads
   async getAdStatus(): Promise<AdStatusResponse> {
     return this.request<AdStatusResponse>('/api/ads/status');
