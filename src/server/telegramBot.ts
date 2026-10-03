@@ -5,7 +5,7 @@ export const TELEGRAM_BOT_TOKEN =
   process.env.TELEGRAM_BOT_TOKEN || '8774039051:AAGSE6-1Oe1EQlhO9SqKNGvBJhTH_CcqNII';
 export const TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'paywatch2_bot';
 export const OFFICIAL_PREVIEW_URL =
-  process.env.APP_URL || 'https://ais-pre-e32af7yum6255lhwklbdqj-325835443688.asia-southeast1.run.app';
+  process.env.APP_URL || 'https://www.criptomining.store';
 
 /**
  * Validates Telegram WebApp initData string using HMAC-SHA256 per official Telegram documentation:
