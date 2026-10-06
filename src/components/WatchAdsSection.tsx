@@ -173,6 +173,17 @@ export const WatchAdsSection: React.FC = () => {
             {dailyWatched} / {dailyLimit} today
           </span>
         </div>
+
+        {/* Live Dynamic Rotation Ticker */}
+        <div className="mt-2.5 px-2.5 py-1.5 rounded-xl bg-amber-50/60 border border-amber-200/50 flex items-center justify-between gap-2 text-[10px] text-amber-900">
+          <div className="flex items-center gap-1 font-semibold truncate">
+            <span className="animate-spin text-amber-600">🔄</span>
+            <span className="truncate">Rotating 18+ Global Sponsors • Fresh ad every watch</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[9px] uppercase shrink-0">
+            Active
+          </span>
+        </div>
       </div>
 
       {/* Ad Format Selector Buttons (User's 3 Monetag Formats) */}

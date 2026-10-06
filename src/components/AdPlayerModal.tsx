@@ -17,6 +17,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.tsx';
+import { getRotatingAdSet } from '../data/adInventory.tsx';
 
 export interface StoryAd {
   id: string;
@@ -459,23 +460,13 @@ export const AdPlayerModal: React.FC = () => {
 
   const adReward = settings?.ad_reward !== undefined ? settings.ad_reward : (activeAdSession?.reward || 0.03);
 
-  // Pick 3 rotating story ads based on how many ads user has watched
-  // e.g. watch 1: stories [0, 1, 2]
-  // watch 2: stories [1, 2, 3]
-  // watch 3: stories [2, 3, 4]
-  // watch 4: stories [3, 4, 5]
-  // watch 5: stories [4, 5, 0]...
-  const watchCount = user?.ads_watched || 0;
-  const storyOffset = watchCount % ALL_STORY_ADS.length;
-  const currentStories: StoryAd[] = [
-    ALL_STORY_ADS[storyOffset % ALL_STORY_ADS.length],
-    ALL_STORY_ADS[(storyOffset + 1) % ALL_STORY_ADS.length],
-    ALL_STORY_ADS[(storyOffset + 2) % ALL_STORY_ADS.length],
-  ];
+  // Dynamic Non-Repeating Ad Rotator: Generates completely fresh Story Ads and Show Ad on every single click
+  const [adSet, setAdSet] = useState<{ stories: any[]; showAd: any }>(() =>
+    getRotatingAdSet(activeAdSession?.sessionId, user?.ads_watched || 0)
+  );
 
-  // Pick 1 rotating Featured Sponsor Show Ad based on user watch count
-  const showAdIndex = watchCount % ALL_SHOW_ADS.length;
-  const currentShowAd: SponsorShowAd = ALL_SHOW_ADS[showAdIndex];
+  const currentStories = adSet.stories;
+  const currentShowAd = adSet.showAd;
 
   // Stage: 'stories' (3 consecutive ads) -> 'show_ad' (1 final featured show ad)
   const [stage, setStage] = useState<'stories' | 'show_ad'>('stories');
@@ -492,9 +483,11 @@ export const AdPlayerModal: React.FC = () => {
   const [isFinishing, setIsFinishing] = useState<boolean>(false);
   const timerRef = useRef<any>(null);
 
-  // Initialize on open
+  // Initialize on open - Pick fresh ads each time modal opens
   useEffect(() => {
     if (isAdPlayerOpen) {
+      const freshAdSet = getRotatingAdSet(activeAdSession?.sessionId, user?.ads_watched || 0);
+      setAdSet(freshAdSet);
       setStage('stories');
       setStoriesElapsed(0);
       setShowAdElapsed(0);

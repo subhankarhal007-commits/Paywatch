@@ -77,7 +77,7 @@ export const AdsView: React.FC = () => {
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="font-semibold text-slate-800 truncate">
-                      {item.ad_title || (item.ad_id === 'ad_1' ? 'ApexPay Crypto Wallet' : item.ad_id === 'ad_2' ? 'Tonkeeper & Crypto Pay' : item.ad_id === 'ad_3' ? 'BitGet Futures Trading' : item.ad_id === 'ad_4' ? 'Major Telegram Stars' : 'Sponsor Video Ad')}
+                      {item.ad_title || 'Verified Sponsor Video Ad'}
                     </span>
                     <span className="text-[10px] text-slate-400">
                       {new Date(item.completed_at).toLocaleDateString(undefined, {
