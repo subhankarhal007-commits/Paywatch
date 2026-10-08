@@ -127,15 +127,22 @@
       })();
     </script>
 
-    <!-- Global Guard for 3rd Party Ad Networks (Monetag / AdEx) -->
+    <!-- Global Guard for 3rd Party Ad Networks (Monetag / AdEx / Adsgram) -->
     <script>
       (function() {
         window.addEventListener('unhandledrejection', function(event) {
           try {
             var reason = event.reason;
             var text = typeof reason === 'string' ? reason : (reason && reason.message ? reason.message : String(reason || ''));
-            if (/adex timeout/i.test(text) || /ad timeout/i.test(text) || /libtl/i.test(text)) {
-              console.warn('🛡️ Intercepted and handled AdEx timeout gracefully:', text);
+            if (
+              /adex timeout/i.test(text) ||
+              /ad timeout/i.test(text) ||
+              /libtl/i.test(text) ||
+              /adsgram/i.test(text) ||
+              /launch parameters/i.test(text) ||
+              /known source/i.test(text)
+            ) {
+              console.warn('🛡️ Intercepted and handled Ad network notice gracefully:', text);
               if (typeof event.preventDefault === 'function') event.preventDefault();
               if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
               return true;
@@ -147,8 +154,15 @@
           try {
             var msg = event.message || '';
             var src = event.filename || '';
-            if (/adex timeout/i.test(msg) || /libtl\.com/i.test(src)) {
-              console.warn('🛡️ Handled AdEx script error:', msg);
+            if (
+              /adex timeout/i.test(msg) ||
+              /libtl\.com/i.test(src) ||
+              /sad\.min\.js/i.test(src) ||
+              /adsgram/i.test(msg) ||
+              /launch parameters/i.test(msg) ||
+              /known source/i.test(msg)
+            ) {
+              console.warn('🛡️ Handled Ad script notice gracefully:', msg);
               if (typeof event.preventDefault === 'function') event.preventDefault();
               return true;
             }
@@ -167,7 +181,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-D7qMLkd7.js"></script>
+    <script type="module" crossorigin src="/assets/index-Ccm1-j-B.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-8A1BZP4E.css">
   </head>
   <body class="bg-slate-100 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
