@@ -133,6 +133,8 @@ export interface SystemSettings {
   admin_pin?: string;
   owner_telegram_ids?: string[];
   adsgram_block_id?: string;
+  adsgram_interstitial_id?: string;
+  adsgram_task_id?: string;
 }
 
 export interface AdStatusResponse {

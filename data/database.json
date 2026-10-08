@@ -6,17 +6,17 @@
       "username": "Subho209",
       "first_name": "Subhankar",
       "profile_photo": "https://t.me/i/userpic/320/QH0SfuhuGrW9QLbTT_PkyInpUr_0nrZ1FMQ1NRiK4OkKHsrujsYVguK7LTP4alhP.svg",
-      "balance": 0.87,
-      "total_earned": 0.87,
+      "balance": 0.93,
+      "total_earned": 0.93,
       "total_withdrawn": 0,
       "ads_watched": 11,
       "daily_ads": 0,
-      "daily_ads_date": "2026-10-06",
+      "daily_ads_date": "2026-10-08",
       "referrals": 0,
       "referral_earnings": 0,
       "tasks_completed": 0,
       "created_at": "2026-09-27T15:07:40.343Z",
-      "updated_at": "2026-10-06T13:28:17.523Z",
+      "updated_at": "2026-10-08T17:36:07.974Z",
       "status": "active",
       "last_ad_watched_at": "2026-09-29T08:55:15.131Z"
     }
@@ -437,6 +437,9 @@
     "admin_pin": "2097",
     "owner_telegram_ids": [
       "5933272882"
-    ]
+    ],
+    "adsgram_block_id": "52773",
+    "adsgram_interstitial_id": "int-52775",
+    "adsgram_task_id": "task-52776"
   }
 }

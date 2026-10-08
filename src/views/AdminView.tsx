@@ -1272,18 +1272,41 @@ export const AdminView: React.FC = () => {
                           />
                         </div>
 
-                        <div className="flex flex-col gap-1">
-                          <label className="font-bold text-slate-700 flex items-center justify-between">
-                            <span>Adsgram Block ID</span>
-                            <span className="text-[10px] text-amber-700 font-normal">From partner.adsgram.ai</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. 1234 or block-1234"
-                            value={settings.adsgram_block_id || ''}
-                            onChange={(e) => setSettings({ ...settings, adsgram_block_id: e.target.value })}
-                            className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs"
-                          />
+                        <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200/60 flex flex-col gap-2">
+                          <span className="font-bold text-amber-900 text-xs">Adsgram Monetization Settings</span>
+                          
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[11px] font-semibold text-slate-700">Rewarded Video ID (Main Watch Ads)</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. 52773"
+                              value={settings.adsgram_block_id || ''}
+                              onChange={(e) => setSettings({ ...settings, adsgram_block_id: e.target.value })}
+                              className="p-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[11px] font-semibold text-slate-700">Interstitial Video ID</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. int-52775"
+                              value={settings.adsgram_interstitial_id || ''}
+                              onChange={(e) => setSettings({ ...settings, adsgram_interstitial_id: e.target.value })}
+                              className="p-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[11px] font-semibold text-slate-700">Task Wall Ad ID</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. task-52776"
+                              value={settings.adsgram_task_id || ''}
+                              onChange={(e) => setSettings({ ...settings, adsgram_task_id: e.target.value })}
+                              className="p-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs"
+                            />
+                          </div>
                         </div>
 
                       <button

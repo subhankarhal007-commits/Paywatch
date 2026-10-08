@@ -42,7 +42,9 @@ const defaultSettings: SystemSettings = {
   support_username: 'paywatch2_bot',
   admin_pin: '2097',
   owner_telegram_ids: ['5933272882'],
-  adsgram_block_id: '',
+  adsgram_block_id: '52773',
+  adsgram_interstitial_id: 'int-52775',
+  adsgram_task_id: 'task-52776',
 };
 
 const defaultAds: Ad[] = [

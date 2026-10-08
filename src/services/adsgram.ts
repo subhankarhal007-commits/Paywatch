@@ -11,53 +11,80 @@ declare global {
   }
 }
 
-// Configurable block ID (can be updated via Admin panel or settings)
-export const DEFAULT_ADSGRAM_BLOCK_ID = 'YOUR_BLOCK_ID';
+// User-provided official Adsgram Block IDs
+export const ADSGRAM_BLOCKS = {
+  // 1. Rewarded Video (52773) - Used for Main "Watch Ad & Earn" button
+  REWARDED: '52773',
+  // 2. Interstitial Video (int-52775) - Used for Rewarded Interstitial format
+  INTERSTITIAL: 'int-52775',
+  // 3. Task Wall Ad (task-52776) - Used for Community Tasks
+  TASK: 'task-52776',
+};
 
 export class AdsgramService {
-  private blockId: string;
-  private adController: any = null;
-
-  constructor(blockId: string = DEFAULT_ADSGRAM_BLOCK_ID) {
-    this.blockId = blockId;
-  }
-
-  public setBlockId(id: string) {
-    this.blockId = id;
-    this.adController = null;
-  }
+  private controllers: Map<string, any> = new Map();
 
   public isAvailable(): boolean {
     return typeof window !== 'undefined' && Boolean(window.Adsgram);
   }
 
-  public async showRewardedAd(customBlockId?: string): Promise<{ success: boolean; error?: string }> {
-    const targetBlockId = customBlockId || this.blockId;
+  private getController(blockId: string) {
+    if (!this.controllers.has(blockId)) {
+      if (typeof window !== 'undefined' && window.Adsgram) {
+        const ctrl = window.Adsgram.init({
+          blockId,
+          debug: false,
+        });
+        this.controllers.set(blockId, ctrl);
+      }
+    }
+    return this.controllers.get(blockId);
+  }
 
+  /**
+   * Show Main Rewarded Video Ad (Block 52773)
+   */
+  public async showRewardedAd(customBlockId?: string): Promise<{ success: boolean; error?: string }> {
+    const blockId = customBlockId || ADSGRAM_BLOCKS.REWARDED;
+    return this.executeAd(blockId);
+  }
+
+  /**
+   * Show Interstitial Ad (Block int-52775)
+   */
+  public async showInterstitialAd(customBlockId?: string): Promise<{ success: boolean; error?: string }> {
+    const blockId = customBlockId || ADSGRAM_BLOCKS.INTERSTITIAL;
+    return this.executeAd(blockId);
+  }
+
+  /**
+   * Show Task Wall / Community Task Ad (Block task-52776)
+   */
+  public async showTaskAd(customBlockId?: string): Promise<{ success: boolean; error?: string }> {
+    const blockId = customBlockId || ADSGRAM_BLOCKS.TASK;
+    return this.executeAd(blockId);
+  }
+
+  private async executeAd(blockId: string): Promise<{ success: boolean; error?: string }> {
     if (!this.isAvailable()) {
       return { success: false, error: 'Adsgram SDK not loaded yet' };
     }
 
-    if (!targetBlockId || targetBlockId === 'YOUR_BLOCK_ID') {
-      return { success: false, error: 'Adsgram Block ID not configured yet' };
-    }
-
     try {
-      if (!this.adController || customBlockId) {
-        this.adController = window.Adsgram!.init({
-          blockId: targetBlockId,
-          debug: false,
-        });
+      const controller = this.getController(blockId);
+      if (!controller) {
+        return { success: false, error: 'Failed to initialize Adsgram controller' };
       }
 
-      const res = await this.adController.show();
+      console.log(`🎬 Displaying Adsgram Ad with Block ID: ${blockId}`);
+      const res = await controller.show();
       if (res && res.done) {
         return { success: true };
       }
-      return { success: false, error: res?.description || 'Ad was skipped before completion' };
+      return { success: false, error: res?.description || 'Ad skipped before completion' };
     } catch (err: any) {
-      console.warn('Adsgram show ad error:', err);
-      return { success: false, error: err?.message || 'Failed to display Adsgram ad' };
+      console.warn(`Adsgram error with block ${blockId}:`, err);
+      return { success: false, error: err?.message || 'Adsgram ad playback error' };
     }
   }
 }

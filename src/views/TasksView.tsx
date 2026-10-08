@@ -11,10 +11,12 @@ import {
   ArrowRight,
   ShieldCheck,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.tsx';
 import { api } from '../services/api.ts';
 import { Task } from '../types/index.ts';
+import { adsgram } from '../services/adsgram.ts';
 
 export const TasksView: React.FC = () => {
   const { user, refreshUser, triggerHaptic, showToast } = useApp();
@@ -26,6 +28,30 @@ export const TasksView: React.FC = () => {
   const [verificationTimer, setVerificationTimer] = useState<number>(0);
   const [hasVisitedLink, setHasVisitedLink] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [isRunningAdsgramTask, setIsRunningAdsgramTask] = useState<boolean>(false);
+
+  const handleAdsgramTaskClick = async () => {
+    triggerHaptic('medium');
+    setIsRunningAdsgramTask(true);
+    try {
+      const res = await adsgram.showTaskAd();
+      if (res.success) {
+        // Task completed! Sync balance with backend
+        const syncRes = await api.syncBalance(Number(((user?.balance || 0) + 0.03).toFixed(2)));
+        if (syncRes.success) {
+          triggerHaptic('success');
+          showToast('🎉 +$0.03 credited from Adsgram Partner Quest!', 'success');
+          await refreshUser();
+        }
+      } else {
+        showToast(res.error || 'Task was not completed.', 'info');
+      }
+    } catch (err: any) {
+      showToast('Adsgram task not available currently.', 'error');
+    } finally {
+      setIsRunningAdsgramTask(false);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -190,6 +216,32 @@ export const TasksView: React.FC = () => {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
+        </div>
+      </div>
+
+      {/* Featured Adsgram Partner Quest (Block task-52776) */}
+      <div
+        onClick={handleAdsgramTaskClick}
+        className="w-full bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent rounded-3xl border-2 border-amber-400/40 p-4 shadow-sm hover:border-amber-400 cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-amber-500/20 shrink-0">
+            {isRunningAdsgramTask ? (
+              <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Sparkles className="w-6 h-6 fill-current text-slate-950" />
+            )}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-900 truncate">Adsgram Partner Quest</span>
+              <span className="px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 font-extrabold text-[9px] uppercase shrink-0">HOT</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5 truncate">Watch sponsor quest &amp; earn instantly</p>
+          </div>
+        </div>
+        <div className="px-2.5 py-1 rounded-xl bg-amber-100 border border-amber-300 text-xs font-extrabold text-amber-900 shrink-0 font-display">
+          +$0.03
         </div>
       </div>
 
