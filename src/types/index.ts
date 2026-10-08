@@ -132,6 +132,7 @@ export interface SystemSettings {
   support_username: string;
   admin_pin?: string;
   owner_telegram_ids?: string[];
+  adsgram_block_id?: string;
 }
 
 export interface AdStatusResponse {

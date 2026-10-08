@@ -1263,14 +1263,28 @@ export const AdminView: React.FC = () => {
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <label className="font-bold text-slate-700">Telegram Bot Username (without @)</label>
-                        <input
-                          type="text"
-                          value={settings.bot_username}
-                          onChange={(e) => setSettings({ ...settings, bot_username: e.target.value })}
-                          className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
-                        />
-                      </div>
+                          <label className="font-bold text-slate-700">Telegram Bot Username (without @)</label>
+                          <input
+                            type="text"
+                            value={settings.bot_username}
+                            onChange={(e) => setSettings({ ...settings, bot_username: e.target.value })}
+                            className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="font-bold text-slate-700 flex items-center justify-between">
+                            <span>Adsgram Block ID</span>
+                            <span className="text-[10px] text-amber-700 font-normal">From partner.adsgram.ai</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 1234 or block-1234"
+                            value={settings.adsgram_block_id || ''}
+                            onChange={(e) => setSettings({ ...settings, adsgram_block_id: e.target.value })}
+                            className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs"
+                          />
+                        </div>
 
                       <button
                         type="submit"

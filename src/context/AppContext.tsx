@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, SystemSettings, AdSession, AdStatusResponse } from '../types/index.ts';
 import { api } from '../services/api.ts';
+import { adsgram } from '../services/adsgram.ts';
 
 declare global {
   interface Window {
@@ -296,6 +297,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!res.success || !res.session) {
         showToast('Unable to start ad session.', 'error');
         return;
+      }
+
+      // If Adsgram is configured, attempt showing real Adsgram Rewarded Video
+      if (settings?.adsgram_block_id && adsgram.isAvailable()) {
+        try {
+          const adResult = await adsgram.showRewardedAd(settings.adsgram_block_id);
+          if (adResult.success) {
+            const verifyRes = await api.verifyAdCompletion({
+              sessionId: res.session.sessionId,
+              nonce: res.session.nonce,
+              signature: res.session.signature,
+              elapsedSeconds: res.session.duration,
+              providerKey: 'adsgram_rewarded',
+            });
+            triggerHaptic('success');
+            showToast(verifyRes.message || `+$${verifyRes.reward.toFixed(2)} credited!`, 'success');
+            if (verifyRes.user?.telegram_id) {
+              localStorage.setItem(`paywatch_vbal_${verifyRes.user.telegram_id}`, verifyRes.user.balance.toFixed(2));
+            }
+            setUser(verifyRes.user);
+            await refreshAdStatus();
+            return;
+          }
+        } catch (e) {
+          console.warn('Adsgram fallback to interactive player:', e);
+        }
       }
 
       setActiveAdSession(res.session);
