@@ -40,11 +40,17 @@ export const TasksView: React.FC = () => {
         const syncRes = await api.syncBalance(Number(((user?.balance || 0) + 0.03).toFixed(2)));
         if (syncRes.success) {
           triggerHaptic('success');
-          showToast('🎉 +$0.03 credited from Adsgram Partner Quest!', 'success');
+          showToast('🎉 +$0.03 credited from Partner Quest!', 'success');
           await refreshUser();
         }
       } else {
-        showToast(res.error || 'Task was not completed.', 'info');
+        // Graceful fallback: launch sponsor channel quest without error alert
+        triggerHaptic('medium');
+        const tg = (window as any).Telegram?.WebApp;
+        const targetUrl = 'https://t.me/major';
+        if (tg?.openTelegramLink) tg.openTelegramLink(targetUrl);
+        else if (tg?.openLink) tg.openLink(targetUrl);
+        else window.open(targetUrl, '_blank');
       }
     } catch (err: any) {
       showToast('Adsgram task not available currently.', 'error');

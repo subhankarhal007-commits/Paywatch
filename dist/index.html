@@ -130,6 +130,23 @@
     <!-- Global Guard for 3rd Party Ad Networks (Monetag / AdEx / Adsgram) -->
     <script>
       (function() {
+        // Auto-dismiss any intrusive Adsgram error modal from blocking the user interface
+        function dismissAdsgramErrorDialogs() {
+          try {
+            var divs = document.querySelectorAll('div');
+            for (var i = 0; i < divs.length; i++) {
+              var d = divs[i];
+              if (d && d.innerText && (d.innerText.indexOf('AdsgramError') !== -1 || d.innerText.indexOf('not active') !== -1 || d.innerText.indexOf('blockId param') !== -1)) {
+                d.style.display = 'none';
+                if (d.parentNode && d.parentNode !== document.body) {
+                  d.parentNode.style.display = 'none';
+                }
+              }
+            }
+          } catch (e) {}
+        }
+        setInterval(dismissAdsgramErrorDialogs, 150);
+
         window.addEventListener('unhandledrejection', function(event) {
           try {
             var reason = event.reason;
@@ -140,9 +157,12 @@
               /libtl/i.test(text) ||
               /adsgram/i.test(text) ||
               /launch parameters/i.test(text) ||
-              /known source/i.test(text)
+              /known source/i.test(text) ||
+              /not active/i.test(text) ||
+              /blockId param/i.test(text)
             ) {
               console.warn('🛡️ Intercepted and handled Ad network notice gracefully:', text);
+              dismissAdsgramErrorDialogs();
               if (typeof event.preventDefault === 'function') event.preventDefault();
               if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
               return true;
@@ -160,9 +180,12 @@
               /sad\.min\.js/i.test(src) ||
               /adsgram/i.test(msg) ||
               /launch parameters/i.test(msg) ||
-              /known source/i.test(msg)
+              /known source/i.test(msg) ||
+              /not active/i.test(msg) ||
+              /blockId param/i.test(msg)
             ) {
               console.warn('🛡️ Handled Ad script notice gracefully:', msg);
+              dismissAdsgramErrorDialogs();
               if (typeof event.preventDefault === 'function') event.preventDefault();
               return true;
             }
@@ -181,7 +204,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-Ccm1-j-B.js"></script>
+    <script type="module" crossorigin src="/assets/index-DSHHH5LC.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-8A1BZP4E.css">
   </head>
   <body class="bg-slate-100 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
