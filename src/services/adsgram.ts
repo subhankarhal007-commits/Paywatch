@@ -12,24 +12,26 @@ declare global {
 }
 
 /**
- * Sanitize Block ID to guarantee it meets Adsgram's strict requirements:
- * "blockId param must be string with number value or start with 'int-' prefix followed by numbers"
+ * Sanitize Block ID to guarantee it meets Adsgram's exact format rules:
+ * - Rewarded: digits only, e.g. "52773"
+ * - Interstitial: starts with "int-", e.g. "int-52775"
+ * - Task: starts with "task-", e.g. "task-52776"
  */
-export function sanitizeBlockId(rawId: string): string {
+export function sanitizeBlockId(rawId: string, type: 'rewarded' | 'interstitial' | 'task' = 'rewarded'): string {
   if (!rawId) return '';
   const trimmed = String(rawId).trim();
-  // If it's an interstitial block like int-52775, keep it
-  if (trimmed.startsWith('int-')) {
-    return trimmed;
+  if (type === 'interstitial') {
+    return trimmed.startsWith('int-') ? trimmed : `int-${trimmed.replace(/\D/g, '')}`;
   }
-  // If it's a task or community format like task-52776, strip non-digits to pass clean numeric string '52776'
-  const digitsOnly = trimmed.replace(/\D/g, '');
-  return digitsOnly || trimmed;
+  if (type === 'task') {
+    return trimmed.startsWith('task-') ? trimmed : `task-${trimmed.replace(/\D/g, '')}`;
+  }
+  return trimmed.replace(/\D/g, '');
 }
 
 /**
- * Immediately dismiss any Adsgram internal error modals (e.g. "not active" or "blockId param")
- * so the user interface never gets blocked.
+ * Automatically dismiss any Adsgram internal error alerts
+ * so users are never interrupted by technical popups.
  */
 export function dismissAdsgramModals() {
   if (typeof document === 'undefined') return;
@@ -58,8 +60,8 @@ export const ADSGRAM_BLOCKS = {
   REWARDED: '52773',
   // 2. Interstitial Video (int-52775) - Used for Rewarded Interstitial format
   INTERSTITIAL: 'int-52775',
-  // 3. Task Wall Ad (52776) - Clean numeric format for Community Tasks
-  TASK: '52776',
+  // 3. Task Wall Ad (task-52776) - Used for Community Tasks
+  TASK: 'task-52776',
 };
 
 export class AdsgramService {
@@ -100,8 +102,7 @@ export class AdsgramService {
     );
   }
 
-  private getController(rawBlockId: string) {
-    const blockId = sanitizeBlockId(rawBlockId);
+  private getController(blockId: string) {
     if (!blockId || !this.isTelegramEnvironment()) {
       return null;
     }
@@ -128,30 +129,27 @@ export class AdsgramService {
    * Show Main Rewarded Video Ad (Block 52773)
    */
   public async showRewardedAd(customBlockId?: string): Promise<{ success: boolean; error?: string }> {
-    const blockId = customBlockId || ADSGRAM_BLOCKS.REWARDED;
-    return this.executeAd(blockId);
+    const blockId = sanitizeBlockId(customBlockId || ADSGRAM_BLOCKS.REWARDED, 'rewarded');
+    return this.executeVideoAd(blockId);
   }
 
   /**
    * Show Interstitial Ad (Block int-52775)
    */
   public async showInterstitialAd(customBlockId?: string): Promise<{ success: boolean; error?: string }> {
-    const blockId = customBlockId || ADSGRAM_BLOCKS.INTERSTITIAL;
-    return this.executeAd(blockId);
+    const blockId = sanitizeBlockId(customBlockId || ADSGRAM_BLOCKS.INTERSTITIAL, 'interstitial');
+    return this.executeVideoAd(blockId);
   }
 
   /**
-   * Show Task Wall / Community Task Ad (Block 52776)
+   * Show Task Wall / Community Task Ad (Block task-52776)
    */
   public async showTaskAd(customBlockId?: string): Promise<{ success: boolean; error?: string }> {
-    const blockId = customBlockId || ADSGRAM_BLOCKS.TASK;
-    return this.executeAd(blockId);
+    const blockId = sanitizeBlockId(customBlockId || ADSGRAM_BLOCKS.TASK, 'task');
+    return this.executeTaskAd(blockId);
   }
 
-  private async executeAd(rawBlockId: string): Promise<{ success: boolean; error?: string }> {
-    const blockId = sanitizeBlockId(rawBlockId);
-
-    // If not inside Telegram, safely fail without throwing AdsgramError
+  private async executeVideoAd(blockId: string): Promise<{ success: boolean; error?: string }> {
     if (!this.isTelegramEnvironment()) {
       return { success: false, error: 'Adsgram ads require Telegram environment' };
     }
@@ -167,7 +165,7 @@ export class AdsgramService {
         return { success: false, error: 'Adsgram unavailable in current environment' };
       }
 
-      console.log(`🎬 Displaying Adsgram Ad with Block ID: ${blockId}`);
+      console.log(`🎬 Displaying Adsgram Video Ad with Block ID: ${blockId}`);
       const res = await controller.show();
       if (res && res.done) {
         return { success: true };
@@ -176,11 +174,39 @@ export class AdsgramService {
       return { success: false, error: res?.description || 'Ad skipped before completion' };
     } catch (err: any) {
       console.warn(`Adsgram notice for block ${blockId}:`, err?.message || err);
-      // Suppress any Adsgram error DOM popups instantly
       dismissAdsgramModals();
       setTimeout(dismissAdsgramModals, 50);
       setTimeout(dismissAdsgramModals, 200);
       return { success: false, error: err?.message || 'Adsgram ad not active yet' };
+    }
+  }
+
+  private async executeTaskAd(blockId: string): Promise<{ success: boolean; error?: string }> {
+    if (!this.isTelegramEnvironment()) {
+      return { success: false, error: 'Telegram environment required' };
+    }
+
+    try {
+      // Find or trigger native Adsgram Task element
+      let taskEl = document.querySelector(`adsgram-task[data-block-id="${blockId}"]`) as HTMLElement;
+      if (!taskEl) {
+        taskEl = document.createElement('adsgram-task');
+        taskEl.setAttribute('data-block-id', blockId);
+        taskEl.style.position = 'fixed';
+        taskEl.style.top = '-9999px';
+        document.body.appendChild(taskEl);
+      }
+
+      const button = taskEl.shadowRoot?.querySelector('button') || taskEl.querySelector('button');
+      if (button) {
+        (button as HTMLElement).click();
+        return { success: true };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      dismissAdsgramModals();
+      return { success: false, error: err?.message };
     }
   }
 }

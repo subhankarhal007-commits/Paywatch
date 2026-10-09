@@ -373,11 +373,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Direct Ad Trigger: Always starts the verified session with the timing countdown modal!
+  // Watch Interstitial Ad action (Block int-52775)
+  const showInterstitialWatch = async () => {
+    triggerHaptic('medium');
+
+    try {
+      const stat = await api.getAdStatus();
+      setAdStatus(stat);
+
+      if (!stat.canWatch) {
+        if (stat.reason === 'cooldown') {
+          showToast(`Please wait ${stat.cooldownRemaining}s before watching next ad`, 'info');
+        } else if (stat.reason === 'daily_limit') {
+          showToast(`Daily limit of ${stat.dailyLimit} ads reached! Resets tomorrow.`, 'info');
+        } else {
+          showToast('No ads available currently. Please check back shortly.', 'error');
+        }
+        return;
+      }
+
+      // Start session with backend
+      const res = await api.startAdSession();
+      if (!res.success || !res.session) {
+        showToast('Unable to start ad session.', 'error');
+        return;
+      }
+
+      // 1. Attempt showing Adsgram Interstitial (int-52775)
+      const interstitialId = settings?.adsgram_interstitial_id || 'int-52775';
+      if (adsgram.isAvailable()) {
+        try {
+          const adResult = await adsgram.showInterstitialAd(interstitialId);
+          if (adResult.success) {
+            const verifyRes = await api.verifyAdCompletion({
+              sessionId: res.session.sessionId,
+              nonce: res.session.nonce,
+              signature: res.session.signature,
+              elapsedSeconds: res.session.duration,
+              providerKey: 'adsgram_interstitial',
+            });
+            triggerHaptic('success');
+            showToast(verifyRes.message || `+$${verifyRes.reward.toFixed(2)} credited!`, 'success');
+            if (verifyRes.user?.telegram_id) {
+              localStorage.setItem(`paywatch_vbal_${verifyRes.user.telegram_id}`, verifyRes.user.balance.toFixed(2));
+            }
+            setUser(verifyRes.user);
+            await refreshAdStatus();
+            return;
+          }
+        } catch (e) {
+          console.warn('Adsgram interstitial notice:', e);
+        }
+      }
+
+      // Fallback to interactive player if Adsgram is in review or failed
+      setActiveAdSession(res.session);
+      setIsAdPlayerOpen(true);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to start ad', 'error');
+      triggerHaptic('error');
+    }
+  };
+
+  // Direct Ad Trigger: Correctly routes between Rewarded Video (52773) and Interstitial (int-52775)
   const triggerMonetagAd = async (
     adType: 'rewarded_interstitial' | 'rewarded_popup' | 'in_app' = 'rewarded_interstitial'
   ): Promise<boolean> => {
     triggerHaptic('medium');
+    if (adType === 'rewarded_interstitial') {
+      await showInterstitialWatch();
+      return true;
+    }
     await startAdWatch();
     return true;
   };
