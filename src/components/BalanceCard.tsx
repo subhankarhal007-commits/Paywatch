@@ -1,9 +1,9 @@
 import React from 'react';
-import { Play, CheckSquare, Users, ShieldAlert, Sparkles } from 'lucide-react';
+import { Users, ShieldAlert, Sparkles, Wallet } from 'lucide-react';
 import { useApp } from '../context/AppContext.tsx';
 
 export const BalanceCard: React.FC = () => {
-  const { user, setActiveTab, triggerMonetagAd, triggerHaptic, setIsProfileOpen } = useApp();
+  const { user, setActiveTab, triggerHaptic, setIsProfileOpen } = useApp();
 
   const balance = user ? user.balance.toFixed(2) : '0.00';
   const firstName = user?.first_name || 'User';
@@ -69,36 +69,20 @@ export const BalanceCard: React.FC = () => {
       <div className="my-4 h-px w-full bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" />
 
       {/* Bottom Quick Options */}
-      <div className="grid grid-cols-3 gap-2 relative z-10">
-        {/* Watch Ads Option */}
+      <div className="grid grid-cols-2 gap-2.5 relative z-10">
+        {/* Withdraw Option */}
         <button
           onClick={() => {
-            triggerHaptic('medium');
-            triggerMonetagAd('rewarded_interstitial');
+            triggerHaptic('light');
+            setActiveTab('withdraw');
           }}
           className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition-all group"
         >
           <div className="w-8 h-8 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center mb-1 group-hover:bg-amber-400 group-hover:text-slate-950 transition-colors">
-            <Play className="w-4 h-4 fill-current ml-0.5" />
+            <Wallet className="w-4 h-4" />
           </div>
           <span className="text-xs font-semibold text-slate-100 group-hover:text-amber-300 transition-colors whitespace-nowrap">
-            Watch Ads
-          </span>
-        </button>
-
-        {/* Complete Tasks Option */}
-        <button
-          onClick={() => {
-            triggerHaptic('light');
-            setActiveTab('tasks');
-          }}
-          className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition-all group"
-        >
-          <div className="w-8 h-8 rounded-full bg-blue-400/20 text-blue-300 flex items-center justify-center mb-1 group-hover:bg-blue-400 group-hover:text-slate-950 transition-colors">
-            <CheckSquare className="w-4 h-4" />
-          </div>
-          <span className="text-xs font-semibold text-slate-100 group-hover:text-blue-300 transition-colors whitespace-nowrap">
-            Complete Tasks
+            Withdraw
           </span>
         </button>
 

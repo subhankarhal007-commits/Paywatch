@@ -35,7 +35,7 @@ const defaultSettings: SystemSettings = {
   referral_reward: 0.20,
   daily_ad_limit: 15,
   ad_reward: 0.03,
-  cooldown_seconds: 0,
+  cooldown_seconds: 20,
   supported_methods: ['USDT (TRC20)', 'TON Network', 'TRX', 'PayPal'],
   bot_username: 'paywatch2_bot',
   announcement: '🌟 Welcome to Pay Watch! Watch verified sponsor ads and complete quick tasks to earn real rewards.',
@@ -299,7 +299,11 @@ class Database {
           transactions: Array.isArray(parsed.transactions)
             ? parsed.transactions.filter((tx: any) => tx.user_id !== 'usr_demo849201847' && !tx.id?.includes('seed'))
             : [],
-          settings: { ...defaultSettings, ...(parsed.settings || {}) },
+          settings: {
+            ...defaultSettings,
+            ...(parsed.settings || {}),
+            cooldown_seconds: (parsed.settings?.cooldown_seconds && parsed.settings.cooldown_seconds > 0) ? parsed.settings.cooldown_seconds : 20,
+          },
         };
       } catch (err) {
         console.error('Failed to parse database file, re-initializing', err);
@@ -332,7 +336,7 @@ class Database {
     }
   }
 
-  private persist() {
+  public persist() {
     this.saveImmediate(this.data);
   }
 

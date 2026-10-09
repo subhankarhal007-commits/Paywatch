@@ -846,7 +846,7 @@ export const AdPlayerModal: React.FC = () => {
 
               {/* Bottom Feature Badges */}
               <div className="relative z-10 w-full flex items-center justify-center gap-2 text-[10px] text-slate-400 font-semibold pb-1 flex-wrap">
-                {currentShowAd.features.map((feat, i) => (
+                {currentShowAd.features.map((feat: string, i: number) => (
                   <React.Fragment key={i}>
                     <span>{feat}</span>
                     {i < currentShowAd.features.length - 1 && <span>•</span>}

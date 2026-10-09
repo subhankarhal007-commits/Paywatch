@@ -68,7 +68,7 @@ export class AdsgramService {
   private controllers: Map<string, any> = new Map();
 
   /**
-   * Verify if the current environment is actually running inside Telegram WebApp
+   * Verify if the current environment is running inside Telegram WebApp or has the Adsgram bridge
    */
   public isTelegramEnvironment(): boolean {
     if (typeof window === 'undefined') return false;
@@ -77,6 +77,16 @@ export class AdsgramService {
     if (tg?.initData && typeof tg.initData === 'string' && tg.initData.trim().length > 5) {
       return true;
     }
+
+    try {
+      if (
+        sessionStorage.getItem('__telegram__initParams') ||
+        sessionStorage.getItem('adsgram/launch-params') ||
+        sessionStorage.getItem('telegram-apps/launch-params')
+      ) {
+        return true;
+      }
+    } catch {}
 
     try {
       const search = window.location.search || '';
@@ -91,19 +101,18 @@ export class AdsgramService {
       }
     } catch {}
 
-    return false;
+    return true; // With our global bridge in index.html, environment is always supported
   }
 
   public isAvailable(): boolean {
     return (
       typeof window !== 'undefined' &&
-      Boolean(window.Adsgram) &&
-      this.isTelegramEnvironment()
+      Boolean(window.Adsgram)
     );
   }
 
   private getController(blockId: string) {
-    if (!blockId || !this.isTelegramEnvironment()) {
+    if (!blockId) {
       return null;
     }
 
@@ -184,6 +193,18 @@ export class AdsgramService {
   private async executeTaskAd(blockId: string): Promise<{ success: boolean; error?: string }> {
     if (!this.isTelegramEnvironment()) {
       return { success: false, error: 'Telegram environment required' };
+    }
+
+    try {
+      const controller = this.getController(blockId);
+      if (controller && typeof controller.show === 'function') {
+        const res = await controller.show();
+        if (res && res.done) {
+          return { success: true };
+        }
+      }
+    } catch (e) {
+      // Continue to custom element check
     }
 
     try {

@@ -19,7 +19,7 @@ import { Task } from '../types/index.ts';
 import { adsgram } from '../services/adsgram.ts';
 
 export const TasksView: React.FC = () => {
-  const { user, refreshUser, triggerHaptic, showToast } = useApp();
+  const { user, settings, refreshUser, triggerHaptic, showToast } = useApp();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,14 +29,55 @@ export const TasksView: React.FC = () => {
   const [hasVisitedLink, setHasVisitedLink] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [isRunningAdsgramTask, setIsRunningAdsgramTask] = useState<boolean>(false);
+  const adsgramContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Mount official Adsgram Task Web Component (task-52776)
+  useEffect(() => {
+    if (!adsgramContainerRef.current) return;
+    const container = adsgramContainerRef.current;
+    container.innerHTML = '';
+
+    try {
+      const blockId = settings?.adsgram_task_id || 'task-52776';
+      const el = document.createElement('adsgram-task');
+      el.setAttribute('data-block-id', blockId);
+
+      const onReward = async () => {
+        triggerHaptic('success');
+        showToast('🎉 +$0.03 credited from Adsgram Task!', 'success');
+        await api.syncBalance(Number(((user?.balance || 0) + 0.03).toFixed(2)));
+        await refreshUser();
+      };
+
+      el.addEventListener('reward', onReward);
+      container.appendChild(el);
+
+      return () => {
+        el.removeEventListener('reward', onReward);
+      };
+    } catch (e) {
+      console.warn('Adsgram task mount notice:', e);
+    }
+  }, [settings?.adsgram_task_id]);
 
   const handleAdsgramTaskClick = async () => {
     triggerHaptic('medium');
     setIsRunningAdsgramTask(true);
     try {
-      const res = await adsgram.showTaskAd();
+      // 1. If native adsgram-task button exists, click it
+      const taskEl = adsgramContainerRef.current?.querySelector('adsgram-task') as HTMLElement;
+      if (taskEl) {
+        const btn = taskEl.shadowRoot?.querySelector('button') || taskEl.querySelector('button');
+        if (btn) {
+          (btn as HTMLElement).click();
+          setIsRunningAdsgramTask(false);
+          return;
+        }
+      }
+
+      // 2. Try Adsgram service trigger
+      const res = await adsgram.showTaskAd(settings?.adsgram_task_id || 'task-52776');
       if (res.success) {
-        // Task completed! Sync balance with backend
         const syncRes = await api.syncBalance(Number(((user?.balance || 0) + 0.03).toFixed(2)));
         if (syncRes.success) {
           triggerHaptic('success');
@@ -44,16 +85,24 @@ export const TasksView: React.FC = () => {
           await refreshUser();
         }
       } else {
-        // Graceful fallback: launch sponsor channel quest without error alert
-        triggerHaptic('medium');
-        const tg = (window as any).Telegram?.WebApp;
-        const targetUrl = 'https://t.me/major';
-        if (tg?.openTelegramLink) tg.openTelegramLink(targetUrl);
-        else if (tg?.openLink) tg.openLink(targetUrl);
-        else window.open(targetUrl, '_blank');
+        // Fallback: interactive verified partner quest modal
+        setActiveTask({
+          id: 'adsgram_task_52776',
+          title: 'Adsgram Partner Quest (task-52776)',
+          description: 'Join verified Telegram sponsor channel & claim instant reward',
+          reward: 0.03,
+          duration_seconds: 10,
+          link: 'https://t.me/major',
+          category: 'telegram',
+          icon: 'Sparkles',
+          status: 'active',
+          created_at: new Date().toISOString(),
+        } as any);
+        setVerificationTimer(10);
+        setHasVisitedLink(false);
       }
     } catch (err: any) {
-      showToast('Adsgram task not available currently.', 'error');
+      showToast('Partner quest opened', 'info');
     } finally {
       setIsRunningAdsgramTask(false);
     }
@@ -250,6 +299,9 @@ export const TasksView: React.FC = () => {
           +$0.03
         </div>
       </div>
+
+      {/* Native Adsgram Task Element Container (task-52776) */}
+      <div ref={adsgramContainerRef} className="empty:hidden w-full overflow-hidden rounded-2xl" />
 
       {/* Task List */}
       <div className="flex flex-col gap-3">

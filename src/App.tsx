@@ -10,7 +10,6 @@ import { ProfileModal } from './views/ProfileModal.tsx';
 import { AdminView } from './views/AdminView.tsx';
 
 import { AdsView } from './views/AdsView.tsx';
-import { TasksView } from './views/TasksView.tsx';
 import { InviteView } from './views/InviteView.tsx';
 import { WithdrawView } from './views/WithdrawView.tsx';
 
@@ -44,7 +43,6 @@ const AppContent: React.FC = () => {
       {/* Main Responsive Content Area */}
       <main className="flex-1 w-full max-w-md mx-auto px-3.5 sm:px-4">
         {activeTab === 'ads' && <AdsView />}
-        {activeTab === 'tasks' && <TasksView />}
         {activeTab === 'invite' && <InviteView />}
         {activeTab === 'withdraw' && <WithdrawView />}
       </main>

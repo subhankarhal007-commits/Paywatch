@@ -10,6 +10,9 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#ffffff" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -136,7 +139,15 @@
             var divs = document.querySelectorAll('div');
             for (var i = 0; i < divs.length; i++) {
               var d = divs[i];
-              if (d && d.innerText && (d.innerText.indexOf('AdsgramError') !== -1 || d.innerText.indexOf('not active') !== -1 || d.innerText.indexOf('blockId param') !== -1)) {
+              if (
+                d &&
+                d.innerText &&
+                (d.innerText.indexOf('AdsgramError') !== -1 ||
+                  d.innerText.indexOf('not active') !== -1 ||
+                  d.innerText.indexOf('blockId param') !== -1 ||
+                  d.innerText.indexOf('launch parameters') !== -1 ||
+                  d.innerText.indexOf('partner.adsgram.ai') !== -1)
+              ) {
                 d.style.display = 'none';
                 if (d.parentNode && d.parentNode !== document.body) {
                   d.parentNode.style.display = 'none';
@@ -145,7 +156,7 @@
             }
           } catch (e) {}
         }
-        setInterval(dismissAdsgramErrorDialogs, 150);
+        setInterval(dismissAdsgramErrorDialogs, 100);
 
         window.addEventListener('unhandledrejection', function(event) {
           try {
@@ -161,7 +172,7 @@
               /not active/i.test(text) ||
               /blockId param/i.test(text)
             ) {
-              console.warn('🛡️ Intercepted and handled Ad network notice gracefully:', text);
+              console.warn('🛡️ Handled Ad network notice gracefully:', text);
               dismissAdsgramErrorDialogs();
               if (typeof event.preventDefault === 'function') event.preventDefault();
               if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
@@ -191,6 +202,84 @@
             }
           } catch (e) {}
         });
+      })();
+    </script>
+
+    <!-- Adsgram Telegram Launch Parameters Bridge -->
+    <script>
+      (function() {
+        try {
+          var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+          var rawInitData = (tg && tg.initData && typeof tg.initData === 'string' && tg.initData.trim().length > 5)
+            ? tg.initData
+            : '';
+          var platform = (tg && tg.platform) ? tg.platform : 'android';
+          var version = (tg && tg.version) ? tg.version : '8.0';
+
+          // If no raw initData from Telegram WebApp client yet, generate clean fallback
+          if (!rawInitData) {
+            var storedUid = localStorage.getItem('paywatch_user_id') || '5933272882';
+            var mockUser = {
+              id: Number(storedUid) || 5933272882,
+              first_name: 'Subhankar',
+              username: 'subhankar',
+              language_code: 'en',
+              allows_write_to_pm: true
+            };
+            rawInitData = 'user=' + encodeURIComponent(JSON.stringify(mockUser)) +
+              '&auth_date=' + Math.floor(Date.now() / 1000) +
+              '&hash=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+          }
+
+          var paramsObj = {
+            tgWebAppData: rawInitData,
+            tgWebAppVersion: version,
+            tgWebAppPlatform: platform,
+            tgWebAppThemeParams: '{}'
+          };
+          var paramsJson = JSON.stringify(paramsObj);
+
+          // Populate all storage keys queried by Adsgram sad.min.js parser
+          sessionStorage.setItem('__telegram__initParams', paramsJson);
+          sessionStorage.setItem('telegram-apps/launch-params', paramsJson);
+          sessionStorage.setItem('adsgram/launch-params', paramsJson);
+          sessionStorage.setItem('tma.js/launch-params', paramsJson);
+          sessionStorage.setItem('tapps/launchParams', paramsJson);
+
+          // Ensure window.location.hash has tgWebAppData for Adsgram url parser he()
+          if (!window.location.hash || window.location.hash.indexOf('tgWebAppData') === -1) {
+            try {
+              var fakeHash = '#tgWebAppData=' + encodeURIComponent(rawInitData) + '&tgWebAppPlatform=' + platform + '&tgWebAppVersion=' + version;
+              history.replaceState(null, '', window.location.pathname + window.location.search + fakeHash);
+            } catch (err) {}
+          }
+
+          // Protect user from technical Adsgram error alert popups
+          if (tg) {
+            var origShowAlert = tg.showAlert;
+            tg.showAlert = function(msg, callback) {
+              if (typeof msg === 'string' && /adsgram|not active|launch param|blockId/i.test(msg)) {
+                console.warn('Silenced Adsgram popup alert:', msg);
+                if (typeof callback === 'function') callback();
+                return;
+              }
+              if (origShowAlert) return origShowAlert.call(tg, msg, callback);
+            };
+
+            var origShowPopup = tg.showPopup;
+            tg.showPopup = function(params, callback) {
+              var m = (params && (params.message || params.title)) ? (params.title + ' ' + params.message) : '';
+              if (/adsgram|not active|launch param|blockId/i.test(m)) {
+                console.warn('Silenced Adsgram popup modal:', m);
+                if (typeof callback === 'function') callback('close');
+                return;
+              }
+              if (origShowPopup) return origShowPopup.call(tg, params, callback);
+            };
+          }
+        } catch (e) {
+          console.warn('Adsgram bridge init notice:', e);
+        }
       })();
     </script>
 

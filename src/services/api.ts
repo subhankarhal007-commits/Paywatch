@@ -46,10 +46,10 @@ class ApiService {
     return !!this.getAdminToken();
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}, retries = 3): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string> || {}),
+      ...((options.headers as Record<string, string>) || {}),
     };
 
     const uid = this.getUserId();
@@ -62,17 +62,54 @@ class ApiService {
       headers['x-admin-token'] = admToken;
     }
 
-    const response = await fetch(endpoint, {
-      ...options,
-      headers,
-    });
+    let lastError: any = null;
 
-    const data = await response.json();
-    if (!response.ok || data.success === false) {
-      throw new Error(data.error || 'Server request failed');
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch(endpoint, {
+          ...options,
+          headers,
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        let data: any;
+
+        if (contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { success: response.ok, message: text };
+          }
+        }
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data.error || data.message || `Server request failed with status ${response.status}`);
+        }
+
+        return data as T;
+      } catch (err: any) {
+        lastError = err;
+        const isNetworkError =
+          err?.name === 'TypeError' ||
+          err?.message?.includes('fetch') ||
+          err?.message?.includes('NetworkError') ||
+          err?.message?.includes('Failed to fetch');
+
+        // Retry if it's a network glitch or server start delay
+        if (attempt < retries && isNetworkError) {
+          const delay = Math.min(500 * Math.pow(1.5, attempt), 2000);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+
+        break;
+      }
     }
 
-    return data;
+    throw lastError || new Error('Request failed');
   }
 
   // Auth

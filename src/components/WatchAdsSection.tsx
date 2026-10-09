@@ -186,9 +186,9 @@ export const WatchAdsSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Ad Format Selector Buttons (User's 3 Monetag Formats) */}
+      {/* Ad Format Selector Buttons (Adsgram Official Units: 52773 & int-52775) */}
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {/* Format 1: Rewarded Interstitial */}
+        {/* Format 1: Interstitial Ad (int-52775) */}
         <button
           type="button"
           onClick={(e) => {
@@ -207,15 +207,18 @@ export const WatchAdsSection: React.FC = () => {
             <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
               <Video className="w-3.5 h-3.5" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-[11px] font-bold leading-tight">Rewarded Interstitial</span>
-              <span className="text-[9px] text-slate-500">Full Video Ad</span>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-bold leading-tight truncate">Interstitial</span>
+                <span className="px-1 py-0.2 rounded bg-amber-200/80 text-amber-900 font-mono text-[8px] font-bold">int-52775</span>
+              </div>
+              <span className="text-[9px] text-slate-500 truncate">Fullscreen Ad</span>
             </div>
           </div>
-          <span className="text-[10px] font-extrabold text-amber-600 font-display">+{`$${reward.toFixed(2)}`}</span>
+          <span className="text-[10px] font-extrabold text-amber-600 font-display shrink-0">+{`$${reward.toFixed(2)}`}</span>
         </button>
 
-        {/* Format 2: Rewarded Popup */}
+        {/* Format 2: Rewarded Video (52773) */}
         <button
           type="button"
           onClick={(e) => {
@@ -234,12 +237,15 @@ export const WatchAdsSection: React.FC = () => {
             <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-700 flex items-center justify-center shrink-0">
               <Layers className="w-3.5 h-3.5" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-[11px] font-bold leading-tight">Rewarded Popup</span>
-              <span className="text-[9px] text-slate-500">Quick Pop Ad</span>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-bold leading-tight truncate">Rewarded</span>
+                <span className="px-1 py-0.2 rounded bg-indigo-100 text-indigo-900 font-mono text-[8px] font-bold">52773</span>
+              </div>
+              <span className="text-[9px] text-slate-500 truncate">Video Quest</span>
             </div>
           </div>
-          <span className="text-[10px] font-extrabold text-amber-600 font-display">+{`$${reward.toFixed(2)}`}</span>
+          <span className="text-[10px] font-extrabold text-amber-600 font-display shrink-0">+{`$${reward.toFixed(2)}`}</span>
         </button>
       </div>
 
