@@ -181,14 +181,6 @@ export const WatchAdButton: React.FC = () => {
             </div>
           </div>
         )}
-
-        {/* Text Directly Under the Button */}
-        <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-          <span>1. Rewarded Video ➔ 2. Auto Bonus Ad</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-amber-700 font-bold tabular-nums">+0.03 USDT</span>
-        </div>
       </div>
 
       {/* Sponsor Mission (Only Sponsor Mission Remains As Requested) */}
