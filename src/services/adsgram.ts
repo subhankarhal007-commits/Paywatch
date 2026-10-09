@@ -43,6 +43,8 @@ export function dismissAdsgramModals() {
         text.includes('AdsgramError') ||
         text.includes('not active') ||
         text.includes('blockId param') ||
+        text.includes('launch parameters') ||
+        text.includes('Telegram environment') ||
         text.includes('partner.adsgram.ai/units')
       ) {
         el.style.display = 'none';

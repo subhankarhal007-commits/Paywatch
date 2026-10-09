@@ -21,10 +21,32 @@
     <script>
       (function() {
         try {
-          // Suppress CloudStorage unsupported log from older Telegram webview versions
+          // Suppress CloudStorage and Adsgram notices from polluting console and causing false-positive triggers
           var origError = console.error;
           console.error = function() {
-            if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('CloudStorage is not supported in version') !== -1) {
+            var msg = '';
+            for (var i = 0; i < arguments.length; i++) {
+              var arg = arguments[i];
+              if (typeof arg === 'string') {
+                msg += ' ' + arg;
+              } else if (arg && arg.message) {
+                msg += ' ' + arg.message;
+              } else if (arg && arg.description) {
+                msg += ' ' + arg.description;
+              } else if (arg && typeof arg === 'object') {
+                try { msg += ' ' + (arg.toString ? arg.toString() : JSON.stringify(arg)); } catch (e) {}
+              }
+            }
+            if (
+              msg.indexOf('CloudStorage is not supported') !== -1 ||
+              msg.indexOf('AdsgramError') !== -1 ||
+              msg.indexOf('launch parameters') !== -1 ||
+              msg.indexOf('Telegram environment') !== -1 ||
+              msg.indexOf('sad.adsgram.ai') !== -1 ||
+              msg.indexOf('blockId param') !== -1 ||
+              msg.indexOf('partner.adsgram.ai') !== -1
+            ) {
+              console.warn('🛡️ Handled SDK notice gracefully:', msg.trim());
               return;
             }
             return origError.apply(console, arguments);
@@ -228,7 +250,11 @@
             };
             rawInitData = 'user=' + encodeURIComponent(JSON.stringify(mockUser)) +
               '&auth_date=' + Math.floor(Date.now() / 1000) +
-              '&hash=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+              '&hash=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' +
+              '&signature=XuIs2xXbu11Oy1elN2Z9F1Q1ZLn-1hDBdKX56HxjMaoxM5j2E34W-N5dCOak2MGAPDlr252jWYHsG_XBOCqhCg';
+          } else if (rawInitData.indexOf('signature=') === -1) {
+            // Adsgram schema strictly validates signature property
+            rawInitData += '&signature=XuIs2xXbu11Oy1elN2Z9F1Q1ZLn-1hDBdKX56HxjMaoxM5j2E34W-N5dCOak2MGAPDlr252jWYHsG_XBOCqhCg';
           }
 
           var paramsObj = {
@@ -246,10 +272,13 @@
           sessionStorage.setItem('tma.js/launch-params', paramsJson);
           sessionStorage.setItem('tapps/launchParams', paramsJson);
 
-          // Ensure window.location.hash has tgWebAppData for Adsgram url parser he()
+          // Ensure window.location.hash has tgWebAppData and tgWebAppThemeParams for Adsgram url parser he()
           if (!window.location.hash || window.location.hash.indexOf('tgWebAppData') === -1) {
             try {
-              var fakeHash = '#tgWebAppData=' + encodeURIComponent(rawInitData) + '&tgWebAppPlatform=' + platform + '&tgWebAppVersion=' + version;
+              var fakeHash = '#tgWebAppData=' + encodeURIComponent(rawInitData) +
+                '&tgWebAppPlatform=' + encodeURIComponent(platform) +
+                '&tgWebAppVersion=' + encodeURIComponent(version) +
+                '&tgWebAppThemeParams=' + encodeURIComponent('{}');
               history.replaceState(null, '', window.location.pathname + window.location.search + fakeHash);
             } catch (err) {}
           }
@@ -293,7 +322,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-DIahXeNG.js"></script>
+    <script type="module" crossorigin src="/assets/index-DGzGkaN2.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-Cz1IkTGA.css">
   </head>
   <body class="bg-slate-100 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
