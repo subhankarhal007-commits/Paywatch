@@ -517,43 +517,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // 1. Attempt official Adsgram SDK execution
       if (adsgram.isAvailable()) {
         try {
-          let adResult: { success: boolean; error?: string } = { success: false };
-          let providerKey = 'adsgram_rewarded';
-
-          if (step === 0) {
-            console.log('🎬 Executing Adsgram Step 1: Rewarded Video (52773)');
-            adResult = await adsgram.showRewardedAd(rewardedId);
-            providerKey = 'adsgram_rewarded';
-          } else if (step === 1) {
-            console.log('🎬 Executing Adsgram Step 2: Interstitial Video (int-52775)');
-            adResult = await adsgram.showInterstitialAd(interstitialId);
-            providerKey = 'adsgram_interstitial';
-          } else {
-            console.log('🎬 Executing Adsgram Step 3: Task Wall Ad (task-52776)');
-            adResult = await adsgram.showTaskAd(taskId);
-            providerKey = 'adsgram_task';
-          }
-
-          if (adResult.success) {
-            const verifyRes = await api.verifyAdCompletion({
-              sessionId: res.session.sessionId,
-              nonce: res.session.nonce,
-              signature: res.session.signature,
-              elapsedSeconds: res.session.duration,
-              providerKey,
-            });
-
-            // Advance sequential rotation to the next ad
-            saveAdSequenceIndex(step + 1);
-
-            triggerHaptic('success');
-            showToast(verifyRes.message || `+$${verifyRes.reward.toFixed(2)} credited! 20s cooldown active`, 'success');
-            if (verifyRes.user?.telegram_id) {
-              localStorage.setItem(`paywatch_vbal_${verifyRes.user.telegram_id}`, verifyRes.user.balance.toFixed(2));
+          if (requestedFormat === 'interstitial') {
+            console.log('🎬 Executing Adsgram Direct Interstitial Ad (int-52775)');
+            const adResult = await adsgram.showInterstitialAd(interstitialId);
+            if (adResult.success) {
+              const verifyRes = await api.verifyAdCompletion({
+                sessionId: res.session.sessionId,
+                nonce: res.session.nonce,
+                signature: res.session.signature,
+                elapsedSeconds: res.session.duration,
+                providerKey: 'adsgram_interstitial',
+              });
+              triggerHaptic('success');
+              showToast(verifyRes.message || `+$${verifyRes.reward.toFixed(2)} credited! 20s cooldown active`, 'success');
+              if (verifyRes.user?.telegram_id) {
+                localStorage.setItem(`paywatch_vbal_${verifyRes.user.telegram_id}`, verifyRes.user.balance.toFixed(2));
+              }
+              setUser(verifyRes.user);
+              await refreshAdStatus();
+              return;
             }
-            setUser(verifyRes.user);
-            await refreshAdStatus();
-            return;
+          } else if (requestedFormat === 'task') {
+            console.log('🎬 Executing Adsgram Direct Task Ad (task-52776)');
+            const adResult = await adsgram.showTaskAd(taskId);
+            if (adResult.success) {
+              const verifyRes = await api.verifyAdCompletion({
+                sessionId: res.session.sessionId,
+                nonce: res.session.nonce,
+                signature: res.session.signature,
+                elapsedSeconds: res.session.duration,
+                providerKey: 'adsgram_task',
+              });
+              triggerHaptic('success');
+              showToast(verifyRes.message || `+$${verifyRes.reward.toFixed(2)} credited! 20s cooldown active`, 'success');
+              if (verifyRes.user?.telegram_id) {
+                localStorage.setItem(`paywatch_vbal_${verifyRes.user.telegram_id}`, verifyRes.user.balance.toFixed(2));
+              }
+              setUser(verifyRes.user);
+              await refreshAdStatus();
+              return;
+            }
+          } else {
+            // =====================================================================
+            // PRIMARY "WATCH AD" SEQUENCE (User Requirement):
+            // 1. First show Rewarded Video (52773)
+            // 2. Immediately auto-play Quick Bonus Ad (int-52775)
+            // 3. When bonus ad completes, time countdown starts and reward is credited!
+            // =====================================================================
+            console.log('🎬 Step 1: Executing Rewarded Video (52773)...');
+            const rewardedResult = await adsgram.showRewardedAd(rewardedId);
+
+            if (rewardedResult.success) {
+              console.log('🎬 Step 1 Complete! Auto-launching Step 2: Quick Bonus Ad (int-52775)...');
+              showToast('Rewarded Video complete! Auto-playing Quick Bonus Ad...', 'info');
+
+              // Brief breather so Adsgram modal transitions smoothly
+              await new Promise((resolve) => setTimeout(resolve, 600));
+
+              try {
+                const bonusResult = await adsgram.showInterstitialAd(interstitialId);
+                console.log('🎬 Step 2 Quick Bonus Ad result:', bonusResult);
+              } catch (bonusErr) {
+                console.warn('Quick Bonus Ad notice:', bonusErr);
+              }
+
+              // Both ads are completed! Verify & claim reward
+              const verifyRes = await api.verifyAdCompletion({
+                sessionId: res.session.sessionId,
+                nonce: res.session.nonce,
+                signature: res.session.signature,
+                elapsedSeconds: res.session.duration,
+                providerKey: 'adsgram_rewarded_combo',
+              });
+
+              triggerHaptic('success');
+              showToast(verifyRes.message || `🎉 Both ads completed! +$${verifyRes.reward.toFixed(2)} credited!`, 'success');
+              if (verifyRes.user?.telegram_id) {
+                localStorage.setItem(`paywatch_vbal_${verifyRes.user.telegram_id}`, verifyRes.user.balance.toFixed(2));
+              }
+              setUser(verifyRes.user);
+
+              // Cooldown timer (20s) begins and shows countdown time!
+              await refreshAdStatus();
+              return;
+            } else if (
+              rewardedResult.error?.includes('skipped') ||
+              rewardedResult.error?.includes('dismissed') ||
+              rewardedResult.error?.includes('closed')
+            ) {
+              showToast('Ad closed early! Watch full ad to earn reward.', 'error');
+              triggerHaptic('error');
+              return;
+            }
           }
         } catch (e) {
           console.warn('Adsgram execution notice, using safe interactive player:', e);

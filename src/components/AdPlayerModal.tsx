@@ -641,11 +641,11 @@ export const AdPlayerModal: React.FC = () => {
           <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-0.5">
             <span className={stage === 'stories' ? 'text-amber-400 font-extrabold flex items-center gap-1' : 'text-emerald-400 flex items-center gap-1'}>
               {stage === 'show_ad' ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Flame className="w-3 h-3 text-amber-400" />}
-              Step 1: 3 Stories ({stage === 'stories' ? `${currentStoryIndex + 1}/3` : 'Done'})
+              Step 1: Rewarded Video ({stage === 'stories' ? `${currentStoryIndex + 1}/3` : 'Done'})
             </span>
             <span className={stage === 'show_ad' ? 'text-amber-400 font-extrabold flex items-center gap-1 animate-pulse' : 'text-slate-500'}>
               <Sparkles className="w-3 h-3" />
-              Step 2: 1 Final Show Ad
+              Step 2: Quick Bonus Ad {stage === 'show_ad' ? '(Auto-Playing)' : ''}
             </span>
           </div>
 
@@ -860,12 +860,12 @@ export const AdPlayerModal: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-black text-white font-display">
-                    {isShowAdReadyToClaim ? '🎉 Show Completed! Claim Reward' : 'Watching Sponsor Show...'}
+                    {isShowAdReadyToClaim ? '🎉 Bonus Ad Completed! Claim Reward' : '⚡ Quick Bonus Ad Playing...'}
                   </h3>
                   <p className="text-[11px] text-slate-400 mt-0.5">
                     {isShowAdReadyToClaim
-                      ? `Tap button below to deposit +$${adReward.toFixed(2)} instantly`
-                      : `Keep open for ${showAdSecondsLeft}s to verify reward`}
+                      ? `Tap button below to deposit +$${adReward.toFixed(2)} & start 20s cooldown timer`
+                      : `Keep open for ${showAdSecondsLeft}s to complete bonus ad`}
                   </p>
                 </div>
                 <div className="px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono font-black text-xs">
@@ -883,7 +883,7 @@ export const AdPlayerModal: React.FC = () => {
                       style={{ width: `${showAdProgress}%` }}
                     />
                     <span className="relative z-10 text-xs font-black text-white font-display tracking-wider flex items-center gap-1.5">
-                      <span>Watching Sponsor Show</span>
+                      <span>Watching Quick Bonus Ad</span>
                       <span className="font-mono text-amber-200">({showAdSecondsLeft}s)</span>
                     </span>
                   </div>
@@ -895,7 +895,7 @@ export const AdPlayerModal: React.FC = () => {
                     className="w-full h-12 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 active:scale-95 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 transition-all cursor-pointer animate-pulse"
                   >
                     <Sparkles className="w-4 h-4 fill-slate-950" />
-                    <span>{isFinishing ? 'Crediting Reward...' : `Claim +$${adReward.toFixed(2)} Reward Now!`}</span>
+                    <span>{isFinishing ? 'Crediting Reward...' : `Claim +$${adReward.toFixed(2)} & Start Cooldown!`}</span>
                     <span className="text-base">💰</span>
                   </button>
                 )}
@@ -908,7 +908,7 @@ export const AdPlayerModal: React.FC = () => {
                     <span>{currentShowAd.actionText}</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </span>
-                  <span>Verified by Pay Watch Sponsored Network</span>
+                  <span>Pay Watch Sponsored Network</span>
                 </div>
               </div>
             </div>
