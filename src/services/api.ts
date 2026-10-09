@@ -177,6 +177,12 @@ class ApiService {
     });
   }
 
+  async completeSponsorMission(): Promise<{ success: boolean; reward: number; newBalance: number; user: User; message: string }> {
+    return this.request('/api/ads/sponsor-mission-complete', {
+      method: 'POST',
+    });
+  }
+
   // Tasks
   async getTasks(): Promise<{ success: boolean; tasks: Task[] }> {
     return this.request<{ success: boolean; tasks: Task[] }>('/api/tasks');

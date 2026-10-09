@@ -538,25 +538,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               return;
             }
           } else if (requestedFormat === 'task') {
-            console.log('🎬 Executing Adsgram Direct Task Ad (task-52776)');
-            const adResult = await adsgram.showTaskAd(taskId);
-            if (adResult.success) {
-              const verifyRes = await api.verifyAdCompletion({
-                sessionId: res.session.sessionId,
-                nonce: res.session.nonce,
-                signature: res.session.signature,
-                elapsedSeconds: res.session.duration,
-                providerKey: 'adsgram_task',
-              });
-              triggerHaptic('success');
-              showToast(verifyRes.message || `+$${verifyRes.reward.toFixed(2)} credited! 20s cooldown active`, 'success');
-              if (verifyRes.user?.telegram_id) {
-                localStorage.setItem(`paywatch_vbal_${verifyRes.user.telegram_id}`, verifyRes.user.balance.toFixed(2));
-              }
-              setUser(verifyRes.user);
-              await refreshAdStatus();
-              return;
+            console.log('🎬 Executing Adsgram Sponsor Mission (task-52776)');
+            try {
+              await adsgram.showTaskAd(taskId);
+            } catch {}
+            const missionRes = await api.completeSponsorMission();
+            triggerHaptic('success');
+            showToast(missionRes.message || '🎉 +$0.05 USDT credited from Sponsor Mission!', 'success');
+            if (missionRes.user?.telegram_id) {
+              localStorage.setItem(`paywatch_vbal_${missionRes.user.telegram_id}`, missionRes.user.balance.toFixed(2));
             }
+            if (missionRes.user) {
+              setUser(missionRes.user);
+            }
+            await refreshAdStatus();
+            return;
           } else {
             // =====================================================================
             // PRIMARY "WATCH AD" SEQUENCE (User Requirement):

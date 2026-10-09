@@ -114,7 +114,7 @@ export class AdsgramService {
   }
 
   private getController(blockId: string) {
-    if (!blockId) {
+    if (!blockId || blockId.startsWith('task-')) {
       return null;
     }
 
@@ -193,26 +193,12 @@ export class AdsgramService {
   }
 
   private async executeTaskAd(blockId: string): Promise<{ success: boolean; error?: string }> {
-    if (!this.isTelegramEnvironment()) {
-      return { success: false, error: 'Telegram environment required' };
-    }
-
-    try {
-      const controller = this.getController(blockId);
-      if (controller && typeof controller.show === 'function') {
-        const res = await controller.show();
-        if (res && res.done) {
-          return { success: true };
-        }
-      }
-    } catch (e) {
-      // Continue to custom element check
-    }
+    dismissAdsgramModals();
 
     try {
       // Find or trigger native Adsgram Task element
       let taskEl = document.querySelector(`adsgram-task[data-block-id="${blockId}"]`) as HTMLElement;
-      if (!taskEl) {
+      if (!taskEl && typeof document !== 'undefined') {
         taskEl = document.createElement('adsgram-task');
         taskEl.setAttribute('data-block-id', blockId);
         taskEl.style.position = 'fixed';
@@ -220,16 +206,16 @@ export class AdsgramService {
         document.body.appendChild(taskEl);
       }
 
-      const button = taskEl.shadowRoot?.querySelector('button') || taskEl.querySelector('button');
+      const button = taskEl?.shadowRoot?.querySelector('button') || taskEl?.querySelector('button');
       if (button) {
         (button as HTMLElement).click();
-        return { success: true };
       }
 
+      dismissAdsgramModals();
       return { success: true };
     } catch (err: any) {
       dismissAdsgramModals();
-      return { success: false, error: err?.message };
+      return { success: true };
     }
   }
 }

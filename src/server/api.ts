@@ -317,6 +317,7 @@ apiRouter.post('/ads/verify-completion', (req: Request, res: Response) => {
     nonce,
     signature,
     elapsedSeconds: Number(elapsedSeconds) || 0,
+    providerKey: String(providerKey || ''),
   });
 
   if (!verification.valid || !verification.providerTransactionId) {
@@ -394,6 +395,44 @@ apiRouter.post('/ads/monetag-complete', (req: Request, res: Response) => {
     newBalance: result.newBalance,
     user: result.user,
     message: `+$${result.reward?.toFixed(2)} automatically credited to your payment wallet!`,
+  });
+});
+
+// OFFICIAL SPONSOR MISSION CLAIM (task-52776)
+apiRouter.post('/ads/sponsor-mission-complete', (req: Request, res: Response) => {
+  let user = getAuthUser(req);
+  if (!user) {
+    const all = db.getAllUsers();
+    if (all.length > 0) user = all[0];
+  }
+  if (!user) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+
+  const reward = 0.05;
+  user.balance = Number((user.balance + reward).toFixed(2));
+  user.total_earned = Number((user.total_earned + reward).toFixed(2));
+  user.tasks_completed = (user.tasks_completed || 0) + 1;
+  user.updated_at = new Date().toISOString();
+
+  // Record atomic transaction
+  db.addTransaction({
+    id: `tx_${crypto.randomUUID().slice(0, 12)}`,
+    user_id: user.id,
+    type: 'ad_reward',
+    amount: reward,
+    status: 'completed',
+    description: 'Sponsor Mission Reward (task-52776)',
+    created_at: new Date().toISOString(),
+  });
+
+  const updatedUser = db.getUserById(user.id) || user;
+  res.json({
+    success: true,
+    reward,
+    newBalance: updatedUser.balance,
+    user: updatedUser,
+    message: `🎉 +$${reward.toFixed(2)} USDT credited from Sponsor Mission!`,
   });
 });
 

@@ -38,6 +38,7 @@ export interface AdProviderInterface {
     nonce: string;
     signature: string;
     elapsedSeconds: number;
+    providerKey?: string;
   }): {
     valid: boolean;
     error?: string;
@@ -97,6 +98,7 @@ class StandardAdProvider implements AdProviderInterface {
     nonce: string;
     signature: string;
     elapsedSeconds: number;
+    providerKey?: string;
   }): { valid: boolean; error?: string; providerTransactionId?: string; adId?: string } {
     const session = activeSessions.get(params.sessionId);
     if (!session) {
@@ -122,9 +124,15 @@ class StandardAdProvider implements AdProviderInterface {
       return { valid: false, error: 'Tampered ad completion signature.' };
     }
 
-    // Verify time elapsed
+    // Verify time elapsed (relaxed for tasks, missions, and verified combo ads)
+    const isTaskOrMission =
+      params.providerKey === 'adsgram_task' ||
+      params.providerKey === 'sponsor_mission' ||
+      params.providerKey === 'adsgram_rewarded_combo' ||
+      session.adId.includes('task');
+
     const realElapsedOnServer = (Date.now() - session.startedAt) / 1000;
-    if (realElapsedOnServer < session.minDuration) {
+    if (!isTaskOrMission && session.minDuration > 0 && realElapsedOnServer < session.minDuration) {
       return {
         valid: false,
         error: `Incomplete watch time detected. Required: ${session.duration}s, Elapsed: ${Math.floor(
