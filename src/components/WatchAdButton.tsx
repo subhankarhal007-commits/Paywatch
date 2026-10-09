@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext.tsx';
 
@@ -70,6 +71,20 @@ export const WatchAdButton: React.FC = () => {
     }
   };
 
+  const handleWatchSpecific = async (format: 'rewarded' | 'interstitial' | 'task') => {
+    if (!canWatch) {
+      triggerHaptic('light');
+      return;
+    }
+
+    setIsLoadingAd(true);
+    try {
+      await watchAdsgramSequence(format);
+    } finally {
+      setIsLoadingAd(false);
+    }
+  };
+
   // Cooldown progress percentage (based on 20 seconds standard cooldown)
   const cooldownPercent = isCooldown ? Math.round(((20 - localCooldown) / 20) * 100) : 100;
 
@@ -87,7 +102,7 @@ export const WatchAdButton: React.FC = () => {
             </h2>
           </div>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Verified Adsgram network sponsor rewards
+            Watch sponsored ads &amp; earn instant cash
           </p>
         </div>
 
@@ -173,12 +188,114 @@ export const WatchAdButton: React.FC = () => {
           </div>
         )}
 
-        {/* Text Directly Under the Button (User Requirement) */}
+        {/* Text Directly Under the Button */}
         <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           <span>Complete ads to earn instantly</span>
           <span className="text-slate-300">•</span>
           <span className="text-amber-700 font-bold tabular-nums">0.03 USDT</span>
+        </div>
+      </div>
+
+      {/* 3 Available High-Earning Ad Units (All 3 Placed for User) */}
+      <div className="mt-4 pt-3.5 border-t border-slate-100">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            Active Ad Units (3 Available)
+          </span>
+          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+            Live CPM
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {/* Ad Unit 1: Rewarded Video (52773) */}
+          <button
+            type="button"
+            onClick={() => handleWatchSpecific('rewarded')}
+            disabled={!canWatch}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+              canWatch
+                ? 'bg-amber-50/60 hover:bg-amber-100/70 border-amber-200/80 cursor-pointer shadow-xs active:scale-[0.98]'
+                : 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-amber-500 text-slate-950 font-bold">
+                <Play className="w-3 h-3 fill-current ml-0.5" />
+              </span>
+              <span className="text-[11px] font-extrabold text-amber-950 font-mono">
+                +0.03 USDT
+              </span>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 leading-tight">
+                Rewarded Video
+              </h4>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                Code: 52773
+              </p>
+            </div>
+          </button>
+
+          {/* Ad Unit 2: Quick Interstitial (int-52775) */}
+          <button
+            type="button"
+            onClick={() => handleWatchSpecific('interstitial')}
+            disabled={!canWatch}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+              canWatch
+                ? 'bg-sky-50/60 hover:bg-sky-100/70 border-sky-200/80 cursor-pointer shadow-xs active:scale-[0.98]'
+                : 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-sky-500 text-white font-bold">
+                <Zap className="w-3 h-3" />
+              </span>
+              <span className="text-[11px] font-extrabold text-sky-950 font-mono">
+                +0.02 USDT
+              </span>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 leading-tight">
+                Quick Bonus Ad
+              </h4>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                Code: int-52775
+              </p>
+            </div>
+          </button>
+
+          {/* Ad Unit 3: Sponsor Task (task-52776) */}
+          <button
+            type="button"
+            onClick={() => handleWatchSpecific('task')}
+            disabled={!canWatch}
+            className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+              canWatch
+                ? 'bg-purple-50/60 hover:bg-purple-100/70 border-purple-200/80 cursor-pointer shadow-xs active:scale-[0.98]'
+                : 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-purple-500 text-white font-bold">
+                <Sparkles className="w-3 h-3" />
+              </span>
+              <span className="text-[11px] font-extrabold text-purple-950 font-mono">
+                +0.05 USDT
+              </span>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 leading-tight">
+                Sponsor Mission
+              </h4>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                Code: task-52776
+              </p>
+            </div>
+          </button>
         </div>
       </div>
 
