@@ -91,6 +91,10 @@ async function startServer() {
       await configureBotMenuButton(targetAppUrl, undefined, '5933272882').catch(console.warn);
 
       startTelegramBotPolling(targetAppUrl);
+
+      // Start Automated 3-Times Daily Notification Scheduler (Morning, Afternoon, Evening)
+      const { startAutoNotificationScheduler } = await import('./src/server/autoNotificationScheduler.ts');
+      startAutoNotificationScheduler();
     } catch (e: any) {
       console.warn('Telegram bot init error:', e.message);
     }

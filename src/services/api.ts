@@ -356,6 +356,29 @@ class ApiService {
       body: JSON.stringify(settings),
     });
   }
+
+  // Automated 3-Times Daily Notification Scheduler
+  async getNotificationStatus() {
+    return this.request<{ success: boolean; status: any }>('/api/admin/notifications/status');
+  }
+
+  async triggerNotification(slot: 'morning' | 'afternoon' | 'evening', targetChatId?: string) {
+    return this.request<{ success: boolean; message: string; result: any }>(
+      '/api/admin/notifications/trigger',
+      {
+        method: 'POST',
+        body: JSON.stringify({ slot, targetChatId }),
+      }
+    );
+  }
+
+  async toggleNotifications(enabled: boolean) {
+    return this.request<{ success: boolean; enabled: boolean }>('/api/admin/notifications/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    });
+  }
 }
 
 export const api = new ApiService();
+

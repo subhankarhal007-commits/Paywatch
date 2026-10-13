@@ -25,12 +25,17 @@ import {
   Gift,
   Eye,
   EyeOff,
+  Bell,
+  Clock,
+  Zap,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { api } from '../services/api.ts';
 import { useApp } from '../context/AppContext.tsx';
 import { User, Ad, Task, Withdrawal, SystemSettings } from '../types/index.ts';
 
-type AdminTab = 'dashboard' | 'users' | 'ads' | 'tasks' | 'withdrawals' | 'settings';
+type AdminTab = 'tasks' | 'notifications' | 'dashboard' | 'users' | 'ads' | 'withdrawals' | 'settings';
 
 export const AdminView: React.FC = () => {
   const { isAdminOpen, setIsAdminOpen, user, triggerHaptic, showToast, refreshUser } = useApp();
@@ -43,6 +48,11 @@ export const AdminView: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<AdminTab>('tasks');
   const [loading, setLoading] = useState(false);
+
+  // Notification Scheduler state
+  const [notificationStatus, setNotificationStatus] = useState<any>(null);
+  const [isBroadcasting, setIsBroadcasting] = useState<boolean>(false);
+  const [targetTestChatId, setTargetTestChatId] = useState<string>('');
 
   // Data states
   const [stats, setStats] = useState<any>(null);
@@ -171,6 +181,9 @@ export const AdminView: React.FC = () => {
       } else if (activeTab === 'withdrawals') {
         const res = await api.getAdminWithdrawals();
         setWithdrawals(res.withdrawals);
+      } else if (activeTab === 'notifications') {
+        const res = await api.getNotificationStatus();
+        setNotificationStatus(res.status);
       } else if (activeTab === 'settings') {
         const res = await api.getAdminDashboard();
         setSettings(res.settings);
@@ -184,6 +197,35 @@ export const AdminView: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTriggerNotification = async (slot: 'morning' | 'afternoon' | 'evening', targetId?: string) => {
+    setIsBroadcasting(true);
+    triggerHaptic('medium');
+    try {
+      const res = await api.triggerNotification(slot, targetId ? targetId.trim() : undefined);
+      if (res.success) {
+        showToast(res.message || `[${slot.toUpperCase()}] broadcast sent!`, 'success');
+        triggerHaptic('success');
+        const st = await api.getNotificationStatus();
+        setNotificationStatus(st.status);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Broadcast failed', 'error');
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
+
+  const handleToggleScheduler = async (enable: boolean) => {
+    try {
+      await api.toggleNotifications(enable);
+      showToast(`Automated notifications ${enable ? 'enabled' : 'paused'}`, 'info');
+      const st = await api.getNotificationStatus();
+      setNotificationStatus(st.status);
+    } catch (err: any) {
+      showToast(err.message, 'error');
     }
   };
 
@@ -522,6 +564,7 @@ export const AdminView: React.FC = () => {
             <div className="flex items-center gap-1.5 py-2.5 overflow-x-auto no-scrollbar shrink-0 border-b border-slate-100 text-xs">
               {[
                 { id: 'tasks', label: 'Tasks Manager', icon: CheckSquare },
+                { id: 'notifications', label: 'Auto Broadcasts (3x/Day)', icon: Bell },
                 { id: 'dashboard', label: 'Dashboard', icon: ShieldCheck },
                 { id: 'users', label: 'Users', icon: Users },
                 { id: 'ads', label: 'Ads', icon: Film },
@@ -837,6 +880,218 @@ export const AdminView: React.FC = () => {
                           </div>
                         </div>
                       ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB: AUTOMATED 3-TIMES DAILY NOTIFICATIONS */}
+              {activeTab === 'notifications' && (
+                <div className="flex flex-col gap-3.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-900 font-display flex items-center gap-1.5">
+                        <Bell className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Automated 3-Times Daily Notifications</span>
+                      </h3>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Motivates users to open Pay Watch &amp; watch ads 3 times a day (Morning, Afternoon, Evening).
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleScheduler(!notificationStatus?.enabled)}
+                        className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                          notificationStatus?.enabled
+                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${notificationStatus?.enabled ? 'bg-white animate-pulse' : 'bg-slate-400'}`} />
+                        <span>{notificationStatus?.enabled ? 'Active (Auto ON)' : 'Paused'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Time & Timezone Banner */}
+                  <div className="p-3 bg-gradient-to-r from-amber-50/80 via-white to-purple-50/80 border border-amber-200/70 rounded-2xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                      <div>
+                        <span className="font-extrabold text-slate-900 block leading-tight">
+                          Regional Clock: {notificationStatus?.currentTime || '--:--'} ({notificationStatus?.timezone || 'IST/BST'})
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          3 daily scheduled windows matching peak user activity
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800 font-mono">
+                      {notificationStatus?.currentDate || 'Today'}
+                    </span>
+                  </div>
+
+                  {/* 3 Scheduled Windows Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    {/* 1. MORNING (09:00 AM) */}
+                    <div className="p-3 rounded-2xl bg-amber-50/50 border border-amber-200/80 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-bold">
+                            <Sun className="w-4 h-4" />
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-amber-200/70 text-amber-900 font-mono">
+                            09:00 AM IST
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900">
+                          1. Morning Quota Reset
+                        </h4>
+                        <p className="text-[10px] text-slate-600 mt-1 line-clamp-3">
+                          &quot;☀️ Good Morning! Your Daily 15 High-Paying Ads Have Reset! Start your morning by collecting easy USDT...&quot;
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-2.5 border-t border-amber-200/60 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-500">
+                          {notificationStatus?.schedule?.[0]?.sentToday ? '✅ Sent Today' : '⏳ Auto-Scheduled'}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isBroadcasting}
+                          onClick={() => handleTriggerNotification('morning')}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] cursor-pointer shadow-xs disabled:opacity-50"
+                        >
+                          {isBroadcasting ? 'Sending...' : 'Send Now'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 2. AFTERNOON (02:00 PM) */}
+                    <div className="p-3 rounded-2xl bg-sky-50/50 border border-sky-200/80 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-sky-500 text-white font-bold">
+                            <Zap className="w-4 h-4" />
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-sky-200/70 text-sky-900 font-mono">
+                            02:00 PM IST
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900">
+                          2. Midday Cash Boost
+                        </h4>
+                        <p className="text-[10px] text-slate-600 mt-1 line-clamp-3">
+                          &quot;⚡ Midday Cash Alert! Active Sponsor Rewards Are Waiting! Take a 2-minute break and grow your wallet balance...&quot;
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-2.5 border-t border-sky-200/60 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-500">
+                          {notificationStatus?.schedule?.[1]?.sentToday ? '✅ Sent Today' : '⏳ Auto-Scheduled'}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isBroadcasting}
+                          onClick={() => handleTriggerNotification('afternoon')}
+                          className="px-2.5 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-bold text-[10px] cursor-pointer shadow-xs disabled:opacity-50"
+                        >
+                          {isBroadcasting ? 'Sending...' : 'Send Now'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 3. EVENING (08:00 PM) */}
+                    <div className="p-3 rounded-2xl bg-purple-50/50 border border-purple-200/80 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-purple-500 text-white font-bold">
+                            <Moon className="w-4 h-4" />
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-purple-200/70 text-purple-900 font-mono">
+                            08:00 PM IST
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900">
+                          3. Evening Quota Expiry Alert
+                        </h4>
+                        <p className="text-[10px] text-slate-600 mt-1 line-clamp-3">
+                          &quot;🌙 Good Evening! Final Call: Complete Today's Quota Before Midnight! Your daily limit refreshes at 12:00 AM...&quot;
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-2.5 border-t border-purple-200/60 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-500">
+                          {notificationStatus?.schedule?.[2]?.sentToday ? '✅ Sent Today' : '⏳ Auto-Scheduled'}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isBroadcasting}
+                          onClick={() => handleTriggerNotification('evening')}
+                          className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] cursor-pointer shadow-xs disabled:opacity-50"
+                        >
+                          {isBroadcasting ? 'Sending...' : 'Send Now'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Single Test Sender Box */}
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                    <span className="text-xs font-bold text-slate-800 block mb-1">
+                      Test Send to a Specific Telegram User
+                    </span>
+                    <p className="text-[10px] text-slate-500 mb-2">
+                      Send a test message directly to your own Telegram account to review formatting before broadcasting.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Telegram ID (e.g. 5933272882)"
+                        value={targetTestChatId}
+                        onChange={(e) => setTargetTestChatId(e.target.value)}
+                        className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-mono"
+                      />
+                      <button
+                        type="button"
+                        disabled={isBroadcasting || !targetTestChatId.trim()}
+                        onClick={() => handleTriggerNotification('morning', targetTestChatId)}
+                        className="py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer disabled:opacity-50 shrink-0"
+                      >
+                        Send Test
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Recent Delivery History */}
+                  <div className="p-3 bg-white border border-slate-100 rounded-2xl shadow-xs">
+                    <span className="text-xs font-bold text-slate-900 block mb-2">
+                      Recent Automated Broadcast History
+                    </span>
+                    {notificationStatus?.history && notificationStatus.history.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {notificationStatus.history.slice(0, 5).map((h: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-[11px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-mono text-[9px]">
+                                {h.slot}
+                              </span>
+                              <span className="text-slate-600">
+                                {new Date(h.sentAt).toLocaleTimeString()} • {new Date(h.sentAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <span className="font-bold text-emerald-600">
+                              {h.successCount}/{h.totalRecipients} Delivered
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-slate-400 py-2 text-center">
+                        No broadcasts sent in this session yet. The background scheduler will automatically send at 09:00, 14:00, and 20:00 IST.
+                      </p>
                     )}
                   </div>
                 </div>

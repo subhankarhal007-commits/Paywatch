@@ -9,16 +9,16 @@
       "balance": 1.07,
       "total_earned": 1.07,
       "total_withdrawn": 0,
-      "ads_watched": 13,
-      "daily_ads": 1,
-      "daily_ads_date": "2026-10-09",
+      "ads_watched": 12,
+      "daily_ads": 0,
+      "daily_ads_date": "2026-10-13",
       "referrals": 0,
       "referral_earnings": 0,
-      "tasks_completed": 1,
+      "tasks_completed": 0,
       "created_at": "2026-09-27T15:07:40.343Z",
-      "updated_at": "2026-10-09T18:42:30.300Z",
+      "updated_at": "2026-10-13T14:44:56.389Z",
       "status": "active",
-      "last_ad_watched_at": "2026-10-09T17:29:27.917Z"
+      "last_ad_watched_at": "2026-10-08T18:21:20.652Z"
     }
   ],
   "ads": [
@@ -310,16 +310,6 @@
       "provider_transaction_id": "prov_tx_2edc5215-fdaf-42",
       "status": "completed",
       "completed_at": "2026-10-08T18:21:20.652Z"
-    },
-    {
-      "id": "adc_21e83904-2",
-      "user_id": "usr_54704191-1c9",
-      "ad_id": "ad_13",
-      "ad_title": "Free Fire 2X Diamonds Top-Up",
-      "reward": 0.03,
-      "provider_transaction_id": "prov_tx_ac7b1891-e768-4b",
-      "status": "completed",
-      "completed_at": "2026-10-09T17:29:27.917Z"
     }
   ],
   "tasks": [
@@ -446,24 +436,6 @@
       "description": "Ad Reward: Cash App Instant P2P",
       "reference_id": "adc_a2d29ae0-5",
       "created_at": "2026-10-08T18:21:20.652Z"
-    },
-    {
-      "id": "tx_74ed0537-6d4",
-      "user_id": "usr_54704191-1c9",
-      "type": "ad_reward",
-      "amount": 0.03,
-      "description": "Ad Reward: Free Fire 2X Diamonds Top-Up",
-      "reference_id": "adc_21e83904-2",
-      "created_at": "2026-10-09T17:29:27.917Z"
-    },
-    {
-      "id": "tx_0814725e-44f",
-      "user_id": "usr_54704191-1c9",
-      "type": "ad_reward",
-      "amount": 0.05,
-      "status": "completed",
-      "description": "Sponsor Mission Reward (task-52776)",
-      "created_at": "2026-10-09T18:42:30.301Z"
     }
   ],
   "settings": {

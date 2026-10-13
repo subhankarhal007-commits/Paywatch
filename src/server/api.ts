@@ -879,3 +879,48 @@ apiRouter.post('/admin/settings', requireAdmin, (req: Request, res: Response) =>
   const updated = db.updateSettings(req.body);
   res.json({ success: true, settings: updated });
 });
+
+// ==========================================
+// AUTOMATED NOTIFICATIONS MANAGEMENT
+// ==========================================
+apiRouter.get('/admin/notifications/status', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { getNotificationSchedulerStatus } = await import('./autoNotificationScheduler.ts');
+    const status = getNotificationSchedulerStatus();
+    res.json({ success: true, status });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+apiRouter.post('/admin/notifications/trigger', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { slot, targetChatId } = req.body;
+    if (!['morning', 'afternoon', 'evening'].includes(slot)) {
+      return res.status(400).json({ success: false, error: 'Invalid slot. Must be morning, afternoon, or evening.' });
+    }
+
+    const { triggerNotificationSlot } = await import('./autoNotificationScheduler.ts');
+    const result = await triggerNotificationSlot(slot, targetChatId);
+
+    res.json({
+      success: true,
+      message: `Successfully broadcasted [${slot.toUpperCase()}] notification to ${result.success} user(s).`,
+      result,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+apiRouter.post('/admin/notifications/toggle', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { enabled } = req.body;
+    const { toggleAutoNotificationScheduler } = await import('./autoNotificationScheduler.ts');
+    const result = toggleAutoNotificationScheduler(Boolean(enabled));
+    res.json({ success: true, enabled: result.enabled });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
