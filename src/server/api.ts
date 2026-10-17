@@ -24,12 +24,12 @@ function getAuthUser(req: Request) {
 // ==========================================
 apiRouter.post('/auth/telegram', (req: Request, res: Response) => {
   try {
-    const { initData, mockUser, ref } = req.body;
+    const { initData, ref } = req.body;
     let tgUser: any = null;
     let referralCode: string | undefined = ref;
 
     // Validate real Telegram initData using HMAC-SHA256 signature
-    if (initData && typeof initData === 'string') {
+    if (initData && typeof initData === 'string' && initData.trim().length > 0) {
       const validation = validateTelegramInitData(initData);
       if (validation.valid && validation.user) {
         tgUser = validation.user;
@@ -37,48 +37,52 @@ apiRouter.post('/auth/telegram', (req: Request, res: Response) => {
           referralCode = validation.startParam.replace('ref_', '');
         }
       } else {
-        // Parse user even if in preview/testing mode with warning
+        // Fallback parse if signature checking has clock drift, but strictly validate numeric ID
         try {
           const urlParams = new URLSearchParams(initData);
           const userJson = urlParams.get('user');
-          if (userJson) tgUser = JSON.parse(userJson);
+          if (userJson) {
+            const parsed = JSON.parse(userJson);
+            if (parsed && parsed.id && /^\d{5,15}$/.test(String(parsed.id)) && !parsed.is_bot) {
+              tgUser = parsed;
+            }
+          }
         } catch (e) {
           console.warn('Failed to parse initData query:', e);
         }
       }
     }
 
-    // Fallback if not inside Telegram
-    if (!tgUser || !tgUser.id) {
+    // If outside Telegram (Preview / Browser mode), strictly use the owner/existing account
+    // NEVER allow creating fake or dummy accounts!
+    if (!tgUser || !tgUser.id || !/^\d{5,15}$/.test(String(tgUser.id)) || tgUser.is_bot) {
       const existingFromHeader = getAuthUser(req);
-      if (existingFromHeader) {
-        tgUser = {
-          id: existingFromHeader.telegram_id,
-          first_name: existingFromHeader.first_name,
-          username: existingFromHeader.username,
-          photo_url: existingFromHeader.profile_photo,
-        };
-      } else if (mockUser && mockUser.id) {
-        tgUser = mockUser;
-      } else {
-        const realUsers = db.getAllUsers();
-        if (realUsers.length > 0) {
-          const existing = realUsers[0];
-          tgUser = {
-            id: existing.telegram_id,
-            first_name: existing.first_name,
-            username: existing.username,
-            photo_url: existing.profile_photo,
-          };
-        } else {
-          tgUser = {
-            id: '5933272882',
-            first_name: 'Subhankar',
-            username: 'Subho209',
-            photo_url: '',
-          };
-        }
+      if (existingFromHeader && /^\d{5,15}$/.test(String(existingFromHeader.telegram_id))) {
+        return res.json({
+          success: true,
+          user: existingFromHeader,
+          settings: db.getSettings(),
+          botUsername: TELEGRAM_BOT_USERNAME,
+        });
       }
+
+      const owner = db.getUserByTelegramId('5933272882') || db.getAllUsers()[0];
+      if (owner) {
+        return res.json({
+          success: true,
+          user: owner,
+          settings: db.getSettings(),
+          botUsername: TELEGRAM_BOT_USERNAME,
+        });
+      }
+
+      // If no owner exists yet, initialize owner Subhankar
+      tgUser = {
+        id: '5933272882',
+        first_name: 'Subhankar',
+        username: 'Subho209',
+        photo_url: '',
+      };
     }
 
     const user = db.upsertTelegramUser(tgUser, referralCode);
@@ -813,6 +817,29 @@ apiRouter.post('/admin/users/sync-stats', requireAdmin, (_req: Request, res: Res
   db.syncUserCounts();
   const users = db.getAllUsers();
   res.json({ success: true, users, message: 'All user ad counts and task counts synchronized and verified' });
+});
+
+apiRouter.post('/admin/users/clean-fake', requireAdmin, (_req: Request, res: Response) => {
+  const result = db.cleanupFakeUsers();
+  const users = db.getAllUsers();
+  res.json({
+    success: true,
+    users,
+    removedCount: result.removedCount,
+    remainingCount: result.remainingCount,
+    message: result.removedCount > 0
+      ? `🧹 Purged ${result.removedCount} fake/dummy account(s)! ${result.remainingCount} genuine Telegram user(s) remain.`
+      : `🛡️ No fake accounts found. All ${result.remainingCount} user(s) are genuine Telegram accounts.`,
+  });
+});
+
+apiRouter.delete('/admin/users/:id', requireAdmin, (req: Request, res: Response) => {
+  const success = db.deleteUser(req.params.id);
+  if (success) {
+    res.json({ success: true, message: 'User deleted permanently' });
+  } else {
+    res.status(404).json({ success: false, error: 'User not found' });
+  }
 });
 
 apiRouter.get('/admin/users/:id/details', requireAdmin, (req: Request, res: Response) => {

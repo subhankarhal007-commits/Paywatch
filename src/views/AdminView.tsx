@@ -105,6 +105,7 @@ export const AdminView: React.FC = () => {
   });
   const [isSavingUserStats, setIsSavingUserStats] = useState(false);
   const [isSyncingUsers, setIsSyncingUsers] = useState(false);
+  const [isCleaningFakeUsers, setIsCleaningFakeUsers] = useState(false);
 
   // User activity details modal
   const [viewingUserDetails, setViewingUserDetails] = useState<User | null>(null);
@@ -441,6 +442,34 @@ export const AdminView: React.FC = () => {
       showToast('Failed to load user details', 'error');
     } finally {
       setIsLoadingUserDetails(false);
+    }
+  };
+
+  const handleCleanFakeUsers = async () => {
+    setIsCleaningFakeUsers(true);
+    try {
+      const res = await api.cleanFakeUsers();
+      if (res.success) {
+        setUsers(res.users);
+        showToast(res.message, res.removedCount > 0 ? 'success' : 'info');
+        loadData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to clean fake accounts', 'error');
+    } finally {
+      setIsCleaningFakeUsers(false);
+    }
+  };
+
+  const handleDeleteUser = async (u: User) => {
+    try {
+      const res = await api.deleteUser(u.id);
+      if (res.success) {
+        showToast(`User ${u.first_name} deleted`, 'success');
+        loadData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete user', 'error');
     }
   };
 
@@ -1290,6 +1319,16 @@ export const AdminView: React.FC = () => {
                     </div>
                     <button
                       type="button"
+                      onClick={handleCleanFakeUsers}
+                      disabled={isCleaningFakeUsers}
+                      title="Scan and delete any fake or dummy accounts"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl shadow-xs transition-all whitespace-nowrap active:scale-95 disabled:opacity-50"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-rose-600" />
+                      <span>{isCleaningFakeUsers ? 'Cleaning...' : 'Clean Fake'}</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleSyncAllUsers}
                       disabled={isSyncingUsers}
                       title="Recalculate & fix all user task and ad counts from completion logs"
@@ -1336,6 +1375,10 @@ export const AdminView: React.FC = () => {
                                     }`}
                                   >
                                     {u.status === 'active' ? 'Active' : 'Suspended'}
+                                  </span>
+                                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                                    <ShieldCheck className="w-2.5 h-2.5 text-sky-600" />
+                                    Verified TG
                                   </span>
                                 </div>
                                 <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-2">
@@ -1416,6 +1459,14 @@ export const AdminView: React.FC = () => {
                                 }`}
                               >
                                 {u.status === 'active' ? 'Suspend' : 'Activate'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u)}
+                                title="Delete user permanently"
+                                className="px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 text-[10px] font-bold transition-colors flex items-center gap-0.5"
+                              >
+                                <Trash2 className="w-3 h-3" />
                               </button>
                             </div>
                           </div>

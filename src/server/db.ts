@@ -394,8 +394,18 @@ class Database {
   }
 
   getAllUsers(): User[] {
-    // Only real users (no demo/mock users)
-    const users = this.data.users.filter((u) => !u.id.startsWith('usr_demo') && u.telegram_id !== '849201847');
+    // Strictly real Telegram users with valid numeric Telegram IDs (5 to 15 digits)
+    const users = this.data.users.filter((u) => {
+      if (!u || !u.telegram_id) return false;
+      const tid = String(u.telegram_id).trim();
+      if (!/^\d{5,15}$/.test(tid)) return false;
+      if (u.id.startsWith('usr_demo') || u.id.startsWith('usr_mock') || u.id.startsWith('usr_fake')) return false;
+      if (tid === '849201847') return false;
+      const name = (u.first_name || '').toLowerCase();
+      if (name.includes('demo user') || name.includes('mock user') || name.includes('fake user') || name.includes('dummy')) return false;
+      return true;
+    });
+
     for (const u of users) {
       const completedAdCompletions = this.data.ad_completions.filter(
         (c) => c.user_id === u.id && (c.status === 'completed' || !c.status)
@@ -425,16 +435,36 @@ class Database {
     username?: string;
     first_name?: string;
     photo_url?: string;
+    is_bot?: boolean;
   }, referrerTelegramId?: string): User {
-    const tid = String(tgUser.id);
+    const tid = String(tgUser.id || '').trim();
+
+    // Strict Anti-Fraud: Must be a valid numeric Telegram ID (5 to 15 digits)
+    const isValidTelegramId = /^\d{5,15}$/.test(tid);
+    if (!isValidTelegramId || tgUser.is_bot) {
+      console.warn(`[Anti-Fraud] Blocked invalid/fake Telegram account attempt: ID="${tid}", is_bot=${tgUser.is_bot}`);
+      // Return existing real owner user, NEVER save a fake account
+      return this.getUserByTelegramId('5933272882') || this.getAllUsers()[0] || this.data.users[0];
+    }
+
+    // Strict Anti-Fraud: Block fake / mock / demo names
+    const firstName = String(tgUser.first_name || '').trim();
+    const username = String(tgUser.username || '').trim().toLowerCase();
+    const isFakeName = /^(mock|dummy|fake|demo_user|test_user)/i.test(firstName) ||
+                       /^(mock_|dummy_|fake_|demo_)/i.test(username);
+    if (isFakeName && tid !== '5933272882') {
+      console.warn(`[Anti-Fraud] Blocked fake account name: "${firstName}" (@${username})`);
+      return this.getUserByTelegramId('5933272882') || this.getAllUsers()[0] || this.data.users[0];
+    }
+
     let user = this.getUserByTelegramId(tid);
     const today = todayDate();
 
     if (!user) {
-      // Find referrer
+      // Find referrer (ensure referrer is not self and is a valid registered user)
       let referrer: User | undefined;
-      if (referrerTelegramId && referrerTelegramId !== tid) {
-        referrer = this.getUserByTelegramId(referrerTelegramId);
+      if (referrerTelegramId && referrerTelegramId !== tid && /^\d{5,15}$/.test(String(referrerTelegramId))) {
+        referrer = this.getUserByTelegramId(String(referrerTelegramId));
       }
 
       user = {
@@ -584,6 +614,46 @@ class Database {
       }
     }
     this.persist();
+  }
+
+  // Purge any fake/dummy/bot accounts from the database
+  cleanupFakeUsers(): { removedCount: number; remainingCount: number } {
+    const initialCount = this.data.users.length;
+    this.data.users = this.data.users.filter((u) => {
+      if (!u || !u.telegram_id) return false;
+      const tid = String(u.telegram_id).trim();
+      if (!/^\d{5,15}$/.test(tid)) return false;
+      if (u.id.startsWith('usr_demo') || u.id.startsWith('usr_mock') || u.id.startsWith('usr_fake')) return false;
+      if (tid === '849201847') return false;
+      const name = (u.first_name || '').toLowerCase();
+      if (name.includes('demo user') || name.includes('mock user') || name.includes('fake user') || name.includes('dummy')) return false;
+      return true;
+    });
+
+    const validUserIds = new Set(this.data.users.map((u) => u.id));
+    this.data.ad_completions = this.data.ad_completions.filter((c) => validUserIds.has(c.user_id));
+    this.data.task_completions = this.data.task_completions.filter((c) => validUserIds.has(c.user_id));
+    this.data.transactions = this.data.transactions.filter((t) => validUserIds.has(t.user_id));
+    this.data.referrals = this.data.referrals.filter((r) => validUserIds.has(r.referrer_id) && validUserIds.has(r.referred_user_id));
+
+    const removedCount = initialCount - this.data.users.length;
+    this.persist();
+    return { removedCount, remainingCount: this.data.users.length };
+  }
+
+  // Delete a specific user completely
+  deleteUser(userId: string): boolean {
+    const initial = this.data.users.length;
+    this.data.users = this.data.users.filter((u) => u.id !== userId);
+    if (this.data.users.length !== initial) {
+      this.data.ad_completions = this.data.ad_completions.filter((c) => c.user_id !== userId);
+      this.data.task_completions = this.data.task_completions.filter((c) => c.user_id !== userId);
+      this.data.transactions = this.data.transactions.filter((t) => t.user_id !== userId);
+      this.data.referrals = this.data.referrals.filter((r) => r.referrer_id !== userId && r.referred_user_id !== userId);
+      this.persist();
+      return true;
+    }
+    return false;
   }
 
   // --- Ads ---

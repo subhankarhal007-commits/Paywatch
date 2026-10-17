@@ -325,6 +325,24 @@ class ApiService {
     });
   }
 
+  async cleanFakeUsers() {
+    return this.request<{
+      success: boolean;
+      users: User[];
+      removedCount: number;
+      remainingCount: number;
+      message: string;
+    }>('/api/admin/users/clean-fake', {
+      method: 'POST',
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.request<{ success: boolean; message: string }>(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getAdminUserDetails(userId: string) {
     return this.request<{
       success: boolean;
