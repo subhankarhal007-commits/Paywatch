@@ -302,6 +302,39 @@ class ApiService {
     });
   }
 
+  async updateUserStats(
+    userId: string,
+    stats: {
+      ads_watched?: number;
+      tasks_completed?: number;
+      balance?: number;
+      total_earned?: number;
+      referrals?: number;
+      status?: 'active' | 'suspended';
+    }
+  ) {
+    return this.request<{ success: boolean; user: User; message: string }>(`/api/admin/users/${userId}/update-stats`, {
+      method: 'POST',
+      body: JSON.stringify(stats),
+    });
+  }
+
+  async syncAllUserStats() {
+    return this.request<{ success: boolean; users: User[]; message: string }>('/api/admin/users/sync-stats', {
+      method: 'POST',
+    });
+  }
+
+  async getAdminUserDetails(userId: string) {
+    return this.request<{
+      success: boolean;
+      user: User;
+      adCompletions: any[];
+      taskCompletions: any[];
+      transactions: any[];
+    }>(`/api/admin/users/${userId}/details`);
+  }
+
   async getAdminAds() {
     return this.request<{ success: boolean; ads: Ad[] }>('/api/admin/ads');
   }

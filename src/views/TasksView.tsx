@@ -44,8 +44,12 @@ export const TasksView: React.FC = () => {
 
       const onReward = async () => {
         triggerHaptic('success');
-        showToast('🎉 +$0.03 credited from Adsgram Task!', 'success');
-        await api.syncBalance(Number(((user?.balance || 0) + 0.03).toFixed(2)));
+        showToast('🎉 +$0.05 credited from Adsgram Task!', 'success');
+        try {
+          await api.completeSponsorMission();
+        } catch {
+          await api.syncBalance(Number(((user?.balance || 0) + 0.05).toFixed(2)));
+        }
         await refreshUser();
       };
 
@@ -78,12 +82,14 @@ export const TasksView: React.FC = () => {
       // 2. Try Adsgram service trigger
       const res = await adsgram.showTaskAd(settings?.adsgram_task_id || 'task-52776');
       if (res.success) {
-        const syncRes = await api.syncBalance(Number(((user?.balance || 0) + 0.03).toFixed(2)));
-        if (syncRes.success) {
-          triggerHaptic('success');
-          showToast('🎉 +$0.03 credited from Partner Quest!', 'success');
-          await refreshUser();
+        try {
+          await api.completeSponsorMission();
+        } catch {
+          await api.syncBalance(Number(((user?.balance || 0) + 0.05).toFixed(2)));
         }
+        triggerHaptic('success');
+        showToast('🎉 +$0.05 credited from Partner Quest!', 'success');
+        await refreshUser();
       } else {
         // Fallback: interactive verified partner quest modal
         setActiveTask({

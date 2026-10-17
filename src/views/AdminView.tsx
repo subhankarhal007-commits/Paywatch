@@ -93,6 +93,28 @@ export const AdminView: React.FC = () => {
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
 
+  // Edit User Stats modal
+  const [editingUserStats, setEditingUserStats] = useState<User | null>(null);
+  const [userStatsForm, setUserStatsForm] = useState({
+    ads_watched: 0,
+    tasks_completed: 0,
+    balance: 0,
+    total_earned: 0,
+    referrals: 0,
+    status: 'active' as 'active' | 'suspended',
+  });
+  const [isSavingUserStats, setIsSavingUserStats] = useState(false);
+  const [isSyncingUsers, setIsSyncingUsers] = useState(false);
+
+  // User activity details modal
+  const [viewingUserDetails, setViewingUserDetails] = useState<User | null>(null);
+  const [userDetailsData, setUserDetailsData] = useState<{
+    adCompletions: any[];
+    taskCompletions: any[];
+    transactions: any[];
+  } | null>(null);
+  const [isLoadingUserDetails, setIsLoadingUserDetails] = useState(false);
+
   // Change PIN state
   const [newAdminPin, setNewAdminPin] = useState('');
   const [isUpdatingPin, setIsUpdatingPin] = useState(false);
@@ -352,6 +374,73 @@ export const AdminView: React.FC = () => {
       refreshUser();
     } catch (err: any) {
       showToast(err.message, 'error');
+    }
+  };
+
+  const openEditStatsModal = (u: User) => {
+    setEditingUserStats(u);
+    setUserStatsForm({
+      ads_watched: u.ads_watched || 0,
+      tasks_completed: u.tasks_completed || 0,
+      balance: u.balance || 0,
+      total_earned: u.total_earned || 0,
+      referrals: u.referrals || 0,
+      status: u.status || 'active',
+    });
+  };
+
+  const handleSaveUserStats = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUserStats) return;
+    setIsSavingUserStats(true);
+    try {
+      const res = await api.updateUserStats(editingUserStats.id, userStatsForm);
+      if (res.success) {
+        showToast('User account & stats saved successfully!', 'success');
+        setEditingUserStats(null);
+        await loadData();
+        refreshUser();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update user stats', 'error');
+    } finally {
+      setIsSavingUserStats(false);
+    }
+  };
+
+  const handleSyncAllUsers = async () => {
+    setIsSyncingUsers(true);
+    try {
+      const res = await api.syncAllUserStats();
+      if (res.success) {
+        setUsers(res.users);
+        showToast('All user ad counts and task counts synchronized!', 'success');
+        refreshUser();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to sync users', 'error');
+    } finally {
+      setIsSyncingUsers(false);
+    }
+  };
+
+  const openUserDetails = async (u: User) => {
+    setViewingUserDetails(u);
+    setIsLoadingUserDetails(true);
+    setUserDetailsData(null);
+    try {
+      const res = await api.getAdminUserDetails(u.id);
+      if (res.success) {
+        setUserDetailsData({
+          adCompletions: res.adCompletions || [],
+          taskCompletions: res.taskCompletions || [],
+          transactions: res.transactions || [],
+        });
+      }
+    } catch (err: any) {
+      showToast('Failed to load user details', 'error');
+    } finally {
+      setIsLoadingUserDetails(false);
     }
   };
 
@@ -1127,9 +1216,15 @@ export const AdminView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-600">Total Ads Served</span>
-                    <span className="font-extrabold text-slate-900 font-mono">{stats.totalAdsServed}</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-3 bg-amber-50/70 border border-amber-200/60 rounded-2xl flex items-center justify-between">
+                      <span className="font-bold text-amber-900">Total Ads Served</span>
+                      <span className="font-extrabold text-amber-950 font-mono text-sm">{stats.totalAdsServed}</span>
+                    </div>
+                    <div className="p-3 bg-emerald-50/70 border border-emerald-200/60 rounded-2xl flex items-center justify-between">
+                      <span className="font-bold text-emerald-900">Total Tasks Done</span>
+                      <span className="font-extrabold text-emerald-950 font-mono text-sm">{stats.totalTasksDone || 0}</span>
+                    </div>
                   </div>
 
                   {/* Telegram Bot Card */}
@@ -1181,16 +1276,28 @@ export const AdminView: React.FC = () => {
               {/* TAB 3: USERS */}
               {activeTab === 'users' && (
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-                    <Search className="w-3.5 h-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search by ID, Username, or Name..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && loadData()}
-                      className="bg-transparent border-none text-xs w-full outline-none text-slate-800"
-                    />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                      <Search className="w-3.5 h-3.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search by ID, Username, or Name..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && loadData()}
+                        className="bg-transparent border-none text-xs w-full outline-none text-slate-800"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSyncAllUsers}
+                      disabled={isSyncingUsers}
+                      title="Recalculate & fix all user task and ad counts from completion logs"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-all whitespace-nowrap active:scale-95 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncingUsers ? 'animate-spin' : ''}`} />
+                      <span>{isSyncingUsers ? 'Syncing...' : 'Sync Counts'}</span>
+                    </button>
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -1206,11 +1313,11 @@ export const AdminView: React.FC = () => {
                       users.map((u) => (
                         <div
                           key={u.id}
-                          className="p-3.5 bg-white border border-slate-200/90 hover:border-amber-300 rounded-2xl flex flex-col gap-2 transition-all shadow-sm"
+                          className="p-3.5 bg-white border border-slate-200/90 hover:border-amber-300 rounded-2xl flex flex-col gap-2.5 transition-all shadow-sm"
                         >
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full gold-gradient-bg text-slate-950 font-extrabold flex items-center justify-center text-xs shadow-xs">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-9 h-9 rounded-full gold-gradient-bg text-slate-950 font-extrabold flex items-center justify-center text-xs shadow-xs">
                                 {u.first_name ? u.first_name.charAt(0).toUpperCase() : 'U'}
                               </div>
                               <div className="flex flex-col">
@@ -1248,29 +1355,64 @@ export const AdminView: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Stats & Actions row */}
-                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                            <div className="flex items-center gap-3 text-slate-500">
-                              <span>🎬 Ads: <strong className="text-slate-700">{u.ads_watched || 0}</strong></span>
-                              <span>✅ Tasks: <strong className="text-slate-700">{u.tasks_completed || 0}</strong></span>
-                              <span>👥 Ref: <strong className="text-slate-700">{u.referrals || 0}</strong></span>
+                          {/* Stats Row with Distinct Badges */}
+                          <div className="grid grid-cols-3 gap-1.5 py-1.5 px-2 bg-slate-50/80 rounded-xl border border-slate-100 text-[10px]">
+                            <div className="flex items-center justify-center gap-1">
+                              <span className="text-slate-500">🎬 Ads:</span>
+                              <strong className="text-amber-800 font-black px-1.5 py-0.5 bg-amber-100/70 border border-amber-200/80 rounded text-[11px] font-mono">
+                                {u.ads_watched || 0}
+                              </strong>
+                            </div>
+                            <div className="flex items-center justify-center gap-1">
+                              <span className="text-slate-500">✅ Tasks:</span>
+                              <strong className="text-emerald-800 font-black px-1.5 py-0.5 bg-emerald-100/70 border border-emerald-200/80 rounded text-[11px] font-mono">
+                                {u.tasks_completed || 0}
+                              </strong>
+                            </div>
+                            <div className="flex items-center justify-center gap-1">
+                              <span className="text-slate-500">👥 Ref:</span>
+                              <strong className="text-sky-800 font-black px-1.5 py-0.5 bg-sky-100/70 border border-sky-200/80 rounded text-[11px] font-mono">
+                                {u.referrals || 0}
+                              </strong>
+                            </div>
+                          </div>
+
+                          {/* Actions row */}
+                          <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 flex-wrap text-[10px]">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => openEditStatsModal(u)}
+                                className="px-2 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-900 transition-colors flex items-center gap-1"
+                              >
+                                <Edit2 className="w-3 h-3 text-amber-700" />
+                                Edit Account
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openUserDetails(u)}
+                                className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-[10px] font-bold text-indigo-700 transition-colors flex items-center gap-1"
+                              >
+                                <Eye className="w-3 h-3 text-indigo-600" />
+                                Activity
+                              </button>
                             </div>
 
                             <div className="flex items-center gap-1.5">
                               <button
                                 type="button"
                                 onClick={() => setAdjustingUser(u)}
-                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors"
+                                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors"
                               >
-                                Adjust Balance
+                                Adjust $
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleToggleUser(u)}
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors ${
                                   u.status === 'active'
-                                    ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                                    : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                    ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200'
+                                    : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
                                 }`}
                               >
                                 {u.status === 'active' ? 'Suspend' : 'Activate'}
@@ -1617,6 +1759,234 @@ export const AdminView: React.FC = () => {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* Edit User Stats & Account Modal */}
+            {editingUserStats && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
+                <div className="bg-white rounded-3xl max-w-sm w-full p-5 flex flex-col gap-3.5 shadow-2xl border border-slate-200">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full gold-gradient-bg text-slate-950 font-black flex items-center justify-center text-xs">
+                        {editingUserStats.first_name ? editingUserStats.first_name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-900">Edit User Account</h4>
+                        <p className="text-[10px] text-slate-500 font-mono">
+                          ID: {editingUserStats.telegram_id} • @{editingUserStats.username || 'n/a'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingUserStats(null)}
+                      className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveUserStats} className="flex flex-col gap-2.5 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                          🎬 Ads Count
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          required
+                          value={userStatsForm.ads_watched}
+                          onChange={(e) =>
+                            setUserStatsForm({ ...userStatsForm, ads_watched: parseInt(e.target.value) || 0 })
+                          }
+                          className="p-2 bg-amber-50/60 border border-amber-200 rounded-xl font-mono text-xs font-bold text-slate-900"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                          ✅ Tasks Count
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          required
+                          value={userStatsForm.tasks_completed}
+                          onChange={(e) =>
+                            setUserStatsForm({ ...userStatsForm, tasks_completed: parseInt(e.target.value) || 0 })
+                          }
+                          className="p-2 bg-emerald-50/60 border border-emerald-200 rounded-xl font-mono text-xs font-bold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] font-bold text-slate-700">Wallet Balance ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          required
+                          value={userStatsForm.balance}
+                          onChange={(e) =>
+                            setUserStatsForm({ ...userStatsForm, balance: parseFloat(e.target.value) || 0 })
+                          }
+                          className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold text-slate-900"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] font-bold text-slate-700">Total Earned ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          required
+                          value={userStatsForm.total_earned}
+                          onChange={(e) =>
+                            setUserStatsForm({ ...userStatsForm, total_earned: parseFloat(e.target.value) || 0 })
+                          }
+                          className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] font-bold text-slate-700">Referrals Count</label>
+                        <input
+                          type="number"
+                          min="0"
+                          required
+                          value={userStatsForm.referrals}
+                          onChange={(e) =>
+                            setUserStatsForm({ ...userStatsForm, referrals: parseInt(e.target.value) || 0 })
+                          }
+                          className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold text-slate-900"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] font-bold text-slate-700">Account Status</label>
+                        <select
+                          value={userStatsForm.status}
+                          onChange={(e) =>
+                            setUserStatsForm({ ...userStatsForm, status: e.target.value as 'active' | 'suspended' })
+                          }
+                          className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                        >
+                          <option value="active">Active (Normal)</option>
+                          <option value="suspended">Suspended (Blocked)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingUserStats(null)}
+                        className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSavingUserStats}
+                        className="flex-1 py-2.5 rounded-xl gold-gradient-bg hover:opacity-95 text-xs font-extrabold text-slate-950 transition-all shadow-sm flex items-center justify-center gap-1.5"
+                      >
+                        {isSavingUserStats ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* User Details & History Modal */}
+            {viewingUserDetails && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
+                <div className="bg-white rounded-3xl max-w-md w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full gold-gradient-bg text-slate-950 font-black flex items-center justify-center text-xs">
+                        {viewingUserDetails.first_name ? viewingUserDetails.first_name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-extrabold text-slate-900">{viewingUserDetails.first_name}</h4>
+                        <p className="text-[10px] text-slate-500 font-mono">TG: {viewingUserDetails.telegram_id}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setViewingUserDetails(null)}
+                      className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 overflow-y-auto flex flex-col gap-3">
+                    {isLoadingUserDetails ? (
+                      <div className="py-8 text-center text-xs text-slate-400">Loading user history...</div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl">
+                            <span className="text-[10px] text-slate-500 font-medium">Completed Ads</span>
+                            <div className="text-base font-black text-amber-700 font-mono">
+                              {userDetailsData?.adCompletions.length || viewingUserDetails.ads_watched || 0}
+                            </div>
+                          </div>
+                          <div className="p-2.5 bg-emerald-50/60 border border-emerald-200/60 rounded-xl">
+                            <span className="text-[10px] text-slate-500 font-medium">Completed Tasks</span>
+                            <div className="text-base font-black text-emerald-700 font-mono">
+                              {userDetailsData?.taskCompletions.filter((t: any) => t.status === 'completed').length || viewingUserDetails.tasks_completed || 0}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Completed Ads list */}
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[11px] font-bold text-slate-700">Ads History ({userDetailsData?.adCompletions.length || 0})</span>
+                          <div className="max-h-36 overflow-y-auto flex flex-col gap-1">
+                            {(!userDetailsData?.adCompletions || userDetailsData.adCompletions.length === 0) ? (
+                              <span className="text-[10px] text-slate-400">No ad records recorded yet</span>
+                            ) : (
+                              userDetailsData.adCompletions.map((ad: any) => (
+                                <div key={ad.id} className="p-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] flex items-center justify-between">
+                                  <span className="font-semibold text-slate-800">{ad.ad_title || ad.ad_id}</span>
+                                  <span className="font-mono text-emerald-600 font-bold">+${ad.reward?.toFixed(2)}</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Completed Tasks list */}
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[11px] font-bold text-slate-700">Tasks History ({userDetailsData?.taskCompletions.length || 0})</span>
+                          <div className="max-h-36 overflow-y-auto flex flex-col gap-1">
+                            {(!userDetailsData?.taskCompletions || userDetailsData.taskCompletions.length === 0) ? (
+                              <span className="text-[10px] text-slate-400">No task records recorded yet</span>
+                            ) : (
+                              userDetailsData.taskCompletions.map((task: any) => (
+                                <div key={task.id} className="p-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] flex items-center justify-between">
+                                  <span className="font-semibold text-slate-800">{task.task_id}</span>
+                                  <span className={`font-bold px-1.5 py-0.5 rounded text-[9px] ${task.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    {task.status}
+                                  </span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

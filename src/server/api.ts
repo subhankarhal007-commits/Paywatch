@@ -412,8 +412,41 @@ apiRouter.post('/ads/sponsor-mission-complete', (req: Request, res: Response) =>
   const reward = 0.05;
   user.balance = Number((user.balance + reward).toFixed(2));
   user.total_earned = Number((user.total_earned + reward).toFixed(2));
+  user.ads_watched = (user.ads_watched || 0) + 1;
   user.tasks_completed = (user.tasks_completed || 0) + 1;
+  user.daily_ads = (user.daily_ads || 0) + 1;
   user.updated_at = new Date().toISOString();
+
+  const completionId = `sponsor_${crypto.randomUUID().slice(0, 10)}`;
+
+  // Record ad completion
+  db.addAdCompletion({
+    id: completionId,
+    user_id: user.id,
+    ad_id: 'task-52776',
+    ad_title: 'Sponsor Mission (task-52776)',
+    reward,
+    provider_transaction_id: `sp_${Date.now()}`,
+    status: 'completed',
+    completed_at: new Date().toISOString(),
+  });
+
+  // Record task completion
+  const existingTaskComp = db.getTaskCompletion(user.id, 'task-52776');
+  if (existingTaskComp) {
+    existingTaskComp.status = 'completed';
+    existingTaskComp.completed_at = new Date().toISOString();
+  } else {
+    db.addTaskCompletion({
+      id: `tc_${crypto.randomUUID().slice(0, 10)}`,
+      user_id: user.id,
+      task_id: 'task-52776',
+      reward,
+      status: 'completed',
+      proof: 'sponsor_channel_auto_verified',
+      completed_at: new Date().toISOString(),
+    });
+  }
 
   // Record atomic transaction
   db.addTransaction({
@@ -423,8 +456,11 @@ apiRouter.post('/ads/sponsor-mission-complete', (req: Request, res: Response) =>
     amount: reward,
     status: 'completed',
     description: 'Sponsor Mission Reward (task-52776)',
+    reference_id: completionId,
     created_at: new Date().toISOString(),
   });
+
+  db.persist();
 
   const updatedUser = db.getUserById(user.id) || user;
   res.json({
@@ -754,6 +790,46 @@ apiRouter.post('/admin/users/:id/adjust-balance', requireAdmin, (req: Request, r
   });
 
   res.json({ success: true, user });
+});
+
+apiRouter.post('/admin/users/:id/update-stats', requireAdmin, (req: Request, res: Response) => {
+  const { ads_watched, tasks_completed, balance, total_earned, referrals, status } = req.body;
+  const user = db.getUserById(req.params.id);
+  if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+  const updated = db.updateUserStats(user.id, {
+    ads_watched: ads_watched !== undefined ? parseInt(String(ads_watched), 10) : undefined,
+    tasks_completed: tasks_completed !== undefined ? parseInt(String(tasks_completed), 10) : undefined,
+    balance: balance !== undefined ? parseFloat(String(balance)) : undefined,
+    total_earned: total_earned !== undefined ? parseFloat(String(total_earned)) : undefined,
+    referrals: referrals !== undefined ? parseInt(String(referrals), 10) : undefined,
+    status,
+  });
+
+  res.json({ success: true, user: updated, message: 'User account & stats updated successfully' });
+});
+
+apiRouter.post('/admin/users/sync-stats', requireAdmin, (_req: Request, res: Response) => {
+  db.syncUserCounts();
+  const users = db.getAllUsers();
+  res.json({ success: true, users, message: 'All user ad counts and task counts synchronized and verified' });
+});
+
+apiRouter.get('/admin/users/:id/details', requireAdmin, (req: Request, res: Response) => {
+  const user = db.getUserById(req.params.id);
+  if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+  const adCompletions = db.getAdCompletions(user.id);
+  const taskCompletions = db.getTaskCompletions(user.id);
+  const transactions = db.getTransactions(user.id);
+
+  res.json({
+    success: true,
+    user,
+    adCompletions,
+    taskCompletions,
+    transactions,
+  });
 });
 
 apiRouter.get('/admin/ads', requireAdmin, (req: Request, res: Response) => {

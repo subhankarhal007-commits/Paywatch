@@ -342,16 +342,82 @@ class Database {
 
   // --- Users ---
   getUserById(id: string): User | undefined {
-    return this.data.users.find((u) => u.id === id);
+    const user = this.data.users.find((u) => u.id === id);
+    if (user) {
+      const completedAdCompletions = this.data.ad_completions.filter(
+        (c) => c.user_id === user.id && (c.status === 'completed' || !c.status)
+      ).length;
+      const adRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === user.id && (tx.type === 'ad_reward' || tx.description?.toLowerCase().includes('ad') || tx.description?.toLowerCase().includes('sponsor'))
+      ).length;
+      if (completedAdCompletions > 0 || adRewardTxs > 0) {
+        user.ads_watched = Math.max(user.ads_watched || 0, completedAdCompletions, adRewardTxs);
+      }
+
+      const completedTaskCompletions = this.data.task_completions.filter(
+        (tc) => tc.user_id === user.id && tc.status === 'completed'
+      ).length;
+      const taskRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === user.id && (tx.type === 'task_reward' || tx.description?.toLowerCase().includes('task') || tx.description?.toLowerCase().includes('mission'))
+      ).length;
+      if (completedTaskCompletions > 0 || taskRewardTxs > 0) {
+        user.tasks_completed = Math.max(user.tasks_completed || 0, completedTaskCompletions, taskRewardTxs);
+      }
+    }
+    return user;
   }
 
   getUserByTelegramId(telegramId: string): User | undefined {
-    return this.data.users.find((u) => u.telegram_id === String(telegramId));
+    const user = this.data.users.find((u) => u.telegram_id === String(telegramId));
+    if (user) {
+      const completedAdCompletions = this.data.ad_completions.filter(
+        (c) => c.user_id === user.id && (c.status === 'completed' || !c.status)
+      ).length;
+      const adRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === user.id && (tx.type === 'ad_reward' || tx.description?.toLowerCase().includes('ad') || tx.description?.toLowerCase().includes('sponsor'))
+      ).length;
+      if (completedAdCompletions > 0 || adRewardTxs > 0) {
+        user.ads_watched = Math.max(user.ads_watched || 0, completedAdCompletions, adRewardTxs);
+      }
+
+      const completedTaskCompletions = this.data.task_completions.filter(
+        (tc) => tc.user_id === user.id && tc.status === 'completed'
+      ).length;
+      const taskRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === user.id && (tx.type === 'task_reward' || tx.description?.toLowerCase().includes('task') || tx.description?.toLowerCase().includes('mission'))
+      ).length;
+      if (completedTaskCompletions > 0 || taskRewardTxs > 0) {
+        user.tasks_completed = Math.max(user.tasks_completed || 0, completedTaskCompletions, taskRewardTxs);
+      }
+    }
+    return user;
   }
 
   getAllUsers(): User[] {
     // Only real users (no demo/mock users)
-    return this.data.users.filter((u) => !u.id.startsWith('usr_demo') && u.telegram_id !== '849201847');
+    const users = this.data.users.filter((u) => !u.id.startsWith('usr_demo') && u.telegram_id !== '849201847');
+    for (const u of users) {
+      const completedAdCompletions = this.data.ad_completions.filter(
+        (c) => c.user_id === u.id && (c.status === 'completed' || !c.status)
+      ).length;
+      const adRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === u.id && (tx.type === 'ad_reward' || tx.description?.toLowerCase().includes('ad') || tx.description?.toLowerCase().includes('sponsor'))
+      ).length;
+      if (completedAdCompletions > 0 || adRewardTxs > 0) {
+        u.ads_watched = Math.max(u.ads_watched || 0, completedAdCompletions, adRewardTxs);
+      }
+
+      const completedTaskCompletions = this.data.task_completions.filter(
+        (tc) => tc.user_id === u.id && tc.status === 'completed'
+      ).length;
+      const taskRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === u.id && (tx.type === 'task_reward' || tx.description?.toLowerCase().includes('task') || tx.description?.toLowerCase().includes('mission'))
+      ).length;
+      if (completedTaskCompletions > 0 || taskRewardTxs > 0) {
+        u.tasks_completed = Math.max(u.tasks_completed || 0, completedTaskCompletions, taskRewardTxs);
+      }
+    }
+    return users;
   }
 
   upsertTelegramUser(tgUser: {
@@ -447,11 +513,77 @@ class Database {
   }
 
   updateUser(id: string, updates: Partial<User>): User | undefined {
-    const user = this.getUserById(id);
+    const user = this.data.users.find((u) => u.id === id);
     if (!user) return undefined;
     Object.assign(user, updates, { updated_at: new Date().toISOString() });
     this.persist();
     return user;
+  }
+
+  updateUserStats(
+    id: string,
+    updates: {
+      ads_watched?: number;
+      tasks_completed?: number;
+      balance?: number;
+      total_earned?: number;
+      referrals?: number;
+      status?: 'active' | 'suspended';
+    }
+  ): User | undefined {
+    const user = this.data.users.find((u) => u.id === id);
+    if (!user) return undefined;
+
+    if (typeof updates.ads_watched === 'number' && !isNaN(updates.ads_watched) && updates.ads_watched >= 0) {
+      user.ads_watched = updates.ads_watched;
+    }
+    if (typeof updates.tasks_completed === 'number' && !isNaN(updates.tasks_completed) && updates.tasks_completed >= 0) {
+      user.tasks_completed = updates.tasks_completed;
+    }
+    if (typeof updates.balance === 'number' && !isNaN(updates.balance) && updates.balance >= 0) {
+      user.balance = Number(updates.balance.toFixed(2));
+    }
+    if (typeof updates.total_earned === 'number' && !isNaN(updates.total_earned) && updates.total_earned >= 0) {
+      user.total_earned = Number(updates.total_earned.toFixed(2));
+    }
+    if (typeof updates.referrals === 'number' && !isNaN(updates.referrals) && updates.referrals >= 0) {
+      user.referrals = updates.referrals;
+    }
+    if (updates.status) {
+      user.status = updates.status;
+    }
+    user.updated_at = new Date().toISOString();
+    this.persist();
+    return user;
+  }
+
+  syncUserCounts(userId?: string): void {
+    const usersToSync = userId
+      ? this.data.users.filter((u) => u.id === userId)
+      : this.data.users;
+
+    for (const u of usersToSync) {
+      const completedAdCompletions = this.data.ad_completions.filter(
+        (c) => c.user_id === u.id && (c.status === 'completed' || !c.status)
+      ).length;
+      const adRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === u.id && (tx.type === 'ad_reward' || tx.description?.toLowerCase().includes('ad') || tx.description?.toLowerCase().includes('sponsor'))
+      ).length;
+      if (completedAdCompletions > 0 || adRewardTxs > 0) {
+        u.ads_watched = Math.max(u.ads_watched || 0, completedAdCompletions, adRewardTxs);
+      }
+
+      const completedTaskCompletions = this.data.task_completions.filter(
+        (tc) => tc.user_id === u.id && tc.status === 'completed'
+      ).length;
+      const taskRewardTxs = this.data.transactions.filter(
+        (tx) => tx.user_id === u.id && (tx.type === 'task_reward' || tx.description?.toLowerCase().includes('task') || tx.description?.toLowerCase().includes('mission'))
+      ).length;
+      if (completedTaskCompletions > 0 || taskRewardTxs > 0) {
+        u.tasks_completed = Math.max(u.tasks_completed || 0, completedTaskCompletions, taskRewardTxs);
+      }
+    }
+    this.persist();
   }
 
   // --- Ads ---
@@ -558,6 +690,11 @@ class Database {
   }
 
   // --- Ad Completions ---
+  addAdCompletion(completion: AdCompletion): void {
+    this.data.ad_completions.push(completion);
+    this.persist();
+  }
+
   getAdCompletions(userId: string): AdCompletion[] {
     return this.data.ad_completions
       .filter((ac) => ac.user_id === userId)
@@ -841,7 +978,22 @@ class Database {
     if (!user) return { success: false, error: 'User not found' };
     if (user.status === 'suspended') return { success: false, error: 'Account suspended' };
 
-    const task = this.getTaskById(taskId);
+    let task = this.getTaskById(taskId);
+    if (!task && (taskId.startsWith('adsgram_task') || taskId.startsWith('task-'))) {
+      task = {
+        id: taskId,
+        title: 'Partner Quest (task-52776)',
+        description: 'Telegram sponsor quest',
+        action_url: 'https://t.me/major',
+        reward: 0.05,
+        duration_seconds: 10,
+        task_type: 'website_visit',
+        verification_method: 'instant_timer',
+        status: 'active',
+        created_at: new Date().toISOString(),
+      };
+      this.data.tasks.push(task);
+    }
     if (!task) return { success: false, error: 'Task not found' };
     if (task.status !== 'active') return { success: false, error: 'Task is no longer active' };
 
