@@ -34,20 +34,28 @@ export function sanitizeBlockId(rawId: string, type: 'rewarded' | 'interstitial'
  * so users are never interrupted by technical popups.
  */
 export function dismissAdsgramModals() {
+  if (typeof window === 'undefined') return;
+  try {
+    if (window.Telegram?.WebView?.receiveEvent) {
+      window.Telegram.WebView.receiveEvent('popup_closed', { button_id: 'close' });
+    }
+  } catch {}
   if (typeof document === 'undefined') return;
   try {
-    const divs = document.querySelectorAll('div');
-    divs.forEach((el) => {
-      const text = el.innerText || '';
+    const els = document.querySelectorAll('div, dialog, section, aside, adsgram-task');
+    els.forEach((el) => {
+      const text = (el as HTMLElement).innerText || '';
       if (
         text.includes('AdsgramError') ||
+        text.includes('Platform App url') ||
+        text.includes('not equal to') ||
         text.includes('not active') ||
         text.includes('blockId param') ||
         text.includes('launch parameters') ||
         text.includes('Telegram environment') ||
-        text.includes('partner.adsgram.ai/units')
+        text.includes('partner.adsgram.ai')
       ) {
-        el.style.display = 'none';
+        (el as HTMLElement).style.display = 'none';
         try {
           el.remove();
         } catch {}

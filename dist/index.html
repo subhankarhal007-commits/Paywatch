@@ -17,6 +17,116 @@
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+    <!-- Telegram Native Popup Interceptor: Prevents Adsgram SDK from showing intrusive error modals -->
+    <script>
+      (function() {
+        function isAdsgramPopup(eventType, eventData) {
+          if (!eventData && !eventType) return false;
+          var str = (eventType || '') + ' ' + (typeof eventData === 'string' ? eventData : JSON.stringify(eventData || {}));
+          return (
+            str.indexOf('AdsgramError') !== -1 ||
+            str.indexOf('Platform App url') !== -1 ||
+            str.indexOf('not equal to') !== -1 ||
+            str.indexOf('Wrong referer') !== -1 ||
+            str.indexOf('WrongReferer') !== -1 ||
+            str.indexOf('BlockNotActive') !== -1 ||
+            str.indexOf('blockId') !== -1 ||
+            str.indexOf('sad.adsgram.ai') !== -1 ||
+            str.indexOf('partner.adsgram.ai') !== -1
+          );
+        }
+
+        function notifyClosed() {
+          try {
+            if (window.Telegram && window.Telegram.WebView && typeof window.Telegram.WebView.receiveEvent === 'function') {
+              window.Telegram.WebView.receiveEvent('popup_closed', { button_id: 'close' });
+            }
+          } catch (e) {}
+        }
+
+        // 1. Intercept Telegram.WebView.postEvent
+        if (window.Telegram && window.Telegram.WebView) {
+          var origPost = window.Telegram.WebView.postEvent;
+          window.Telegram.WebView.postEvent = function(eventType, callback, eventData) {
+            if (eventType === 'web_app_open_popup' && isAdsgramPopup(eventType, eventData)) {
+              console.warn('🛡️ Silenced Adsgram WebView postEvent popup');
+              notifyClosed();
+              if (typeof callback === 'function') callback({ button_id: 'close' });
+              return;
+            }
+            return origPost.apply(this, arguments);
+          };
+        }
+
+        // 2. Intercept Android native proxy: TelegramWebviewProxy.postEvent
+        function patchProxy(proxy) {
+          if (!proxy || !proxy.postEvent || proxy.__shieldPatched) return proxy;
+          var origProxyPost = proxy.postEvent.bind(proxy);
+          proxy.postEvent = function(eventType, eventDataStr) {
+            if (eventType === 'web_app_open_popup' && isAdsgramPopup(eventType, eventDataStr)) {
+              console.warn('🛡️ Silenced Android native Adsgram error dialog');
+              notifyClosed();
+              return;
+            }
+            return origProxyPost(eventType, eventDataStr);
+          };
+          proxy.__shieldPatched = true;
+          return proxy;
+        }
+
+        if (window.TelegramWebviewProxy) {
+          patchProxy(window.TelegramWebviewProxy);
+        }
+        var _realProxy = window.TelegramWebviewProxy;
+        try {
+          Object.defineProperty(window, 'TelegramWebviewProxy', {
+            get: function() { return _realProxy; },
+            set: function(val) {
+              _realProxy = patchProxy(val);
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {}
+
+        // 3. Intercept window.parent.postMessage (Desktop & Web)
+        var origPostMessage = window.parent && window.parent.postMessage;
+        if (origPostMessage && window.parent !== window) {
+          window.parent.postMessage = function(msg, targetOrigin) {
+            if (isAdsgramPopup('', msg)) {
+              console.warn('🛡️ Silenced parent postMessage Adsgram error popup');
+              notifyClosed();
+              return;
+            }
+            return origPostMessage.apply(window.parent, arguments);
+          };
+        }
+
+        // 4. Intercept Telegram.WebApp.showPopup & showAlert
+        if (window.Telegram && window.Telegram.WebApp) {
+          var origShowPopup = window.Telegram.WebApp.showPopup;
+          window.Telegram.WebApp.showPopup = function(params, callback) {
+            if (isAdsgramPopup('web_app_open_popup', params)) {
+              console.warn('🛡️ Silenced Telegram.WebApp.showPopup');
+              if (typeof callback === 'function') callback('close');
+              return;
+            }
+            if (origShowPopup) return origShowPopup.call(window.Telegram.WebApp, params, callback);
+          };
+
+          var origShowAlert = window.Telegram.WebApp.showAlert;
+          window.Telegram.WebApp.showAlert = function(msg, callback) {
+            if (isAdsgramPopup('web_app_open_popup', msg)) {
+              console.warn('🛡️ Silenced Telegram.WebApp.showAlert');
+              if (typeof callback === 'function') callback();
+              return;
+            }
+            if (origShowAlert) return origShowAlert.call(window.Telegram.WebApp, msg, callback);
+          };
+        }
+      })();
+    </script>
+
     <!-- Telegram WebApp CloudStorage Polyfill & Compatibility Layer -->
     <script>
       (function() {
@@ -322,7 +432,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-rkzUTn5a.js"></script>
+    <script type="module" crossorigin src="/assets/index-BrccQDQ1.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-B1O90BpN.css">
   </head>
   <body class="bg-slate-100 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
