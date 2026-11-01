@@ -81,12 +81,11 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 Pay Watch backend server running on http://0.0.0.0:${PORT} (Production: ${isProduction})`);
 
-    const targetAppUrl = 'https://www.criptomining.store';
-
     try {
-      const { configureBotMenuButton, startTelegramBotPolling } = await import('./src/server/telegramBot.ts');
+      const { configureBotMenuButton, startTelegramBotPolling, getCleanAppUrl } = await import('./src/server/telegramBot.ts');
+      const targetAppUrl = getCleanAppUrl();
 
-      // Keep bot menu button locked to the official domain:
+      // Keep bot menu button updated to the live domain:
       await configureBotMenuButton(targetAppUrl).catch(console.warn);
       await configureBotMenuButton(targetAppUrl, undefined, '5933272882').catch(console.warn);
 
