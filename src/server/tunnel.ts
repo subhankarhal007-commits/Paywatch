@@ -163,7 +163,9 @@ export async function startPublicTunnel(localPort = 3000): Promise<string | null
   const tunnelToken = process.env.CLOUDFLARE_TUNNEL_TOKEN;
   if (tunnelToken) {
     const customDomainUrl =
-      process.env.APP_URL || 'https://www.criptomining.store';
+      process.env.APP_URL ||
+      process.env.RENDER_EXTERNAL_URL ||
+      'https://ais-pre-e32af7yum6255lhwklbdqj-325835443688.asia-southeast1.run.app';
     try {
       execSync('pkill -f "cloudflared tunnel" || true');
     } catch {}

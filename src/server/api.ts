@@ -7,6 +7,7 @@ import {
   configureBotMenuButton,
   sendBotWelcomeMessage,
   TELEGRAM_BOT_USERNAME,
+  getCleanAppUrl,
 } from './telegramBot.ts';
 import crypto from 'crypto';
 
@@ -139,7 +140,7 @@ apiRouter.post('/bot/webhook', async (req: Request, res: Response) => {
     if (update?.message?.text) {
       const chatId = update.message.chat.id;
       const text = update.message.text;
-      const appUrl = 'https://www.criptomining.store';
+      const appUrl = getCleanAppUrl();
 
       if (text.startsWith('/start')) {
         await sendBotWelcomeMessage(chatId, appUrl);

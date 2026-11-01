@@ -4,15 +4,26 @@ import { getPublicUrl } from './tunnel.ts';
 export const TELEGRAM_BOT_TOKEN =
   process.env.TELEGRAM_BOT_TOKEN || '8774039051:AAGSE6-1Oe1EQlhO9SqKNGvBJhTH_CcqNII';
 export const TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'paywatch2_bot';
-export const PRODUCTION_DOMAIN = 'https://www.criptomining.store';
+export const PRODUCTION_DOMAIN =
+  process.env.APP_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  'https://ais-pre-e32af7yum6255lhwklbdqj-325835443688.asia-southeast1.run.app';
 
 export function getCleanAppUrl(preferredUrl?: string): string {
-  if (preferredUrl && !preferredUrl.includes('.run.app') && !preferredUrl.includes('localhost')) {
-    return preferredUrl;
+  if (preferredUrl && preferredUrl.trim().length > 0 && !preferredUrl.includes('localhost')) {
+    return preferredUrl.trim();
   }
   const envUrl = process.env.APP_URL;
-  if (envUrl && !envUrl.includes('.run.app') && !envUrl.includes('localhost')) {
-    return envUrl;
+  if (envUrl && envUrl.trim().length > 0 && !envUrl.includes('localhost')) {
+    return envUrl.trim();
+  }
+  const renderUrl = process.env.RENDER_EXTERNAL_URL;
+  if (renderUrl && renderUrl.trim().length > 0) {
+    return renderUrl.trim();
+  }
+  const publicTunnel = getPublicUrl();
+  if (publicTunnel) {
+    return publicTunnel;
   }
   return PRODUCTION_DOMAIN;
 }
